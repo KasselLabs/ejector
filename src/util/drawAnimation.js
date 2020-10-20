@@ -7,7 +7,7 @@ async function drawBackgroundVideo (canvas, elapsed = 0) {
   const frame = frames[frameNumber]
 
   const context = canvas.getContext('2d')
-  context.drawImage(frame, 0, 0)
+  context.drawImage(frame, 0, 0, canvas.width, canvas.height)
 }
 
 function getTextToDisplay (text, elapsed) {
@@ -30,15 +30,17 @@ function getTextToDisplay (text, elapsed) {
 }
 
 function drawText (canvas, context, text = '', elapsed = 0) {
+  const canvasTxt = require('canvas-txt').default
   const { width, height } = canvas
 
-  context.font = '72px Arial'
+  context.font = 'Arial'
   context.textBaseline = 'middle'
   context.textAlign = 'center'
   context.fillStyle = 'white'
 
   const textToDisplay = getTextToDisplay(text, elapsed)
-  context.fillText(textToDisplay, width / 2, height / 2)
+  canvasTxt.fontSize = 0.067 * height
+  canvasTxt.drawText(context, textToDisplay, 0, 0, width, height)
 }
 
 const drawAnimation = async (canvas, text, elapsed) => {

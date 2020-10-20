@@ -1,57 +1,72 @@
 import React from 'react'
+import { Box, TextField } from '@material-ui/core'
 
-import getBackgroundFrames from '../src/util/getBackgroundFrames'
-import drawAnimation from '../src/util/drawAnimation'
-
-const animateCanvas = async (canvas, text, elapsed = 0) => {
-  const DESIRED_FPS = 30
-  const DESIRED_DIFF = 1000 / DESIRED_FPS
-
-  let startTimestamp = null
-  let lastTimestamp = null
-  const step = async (timestamp) => {
-    if (!startTimestamp) {
-      startTimestamp = timestamp
-    }
-    const timestampDiff = timestamp - lastTimestamp
-    const elapsed = (timestamp - startTimestamp) / 1000
-
-    drawAnimation(canvas, text, elapsed)
-
-    if (elapsed < 5.5) {
-      const nextFrameDelay = Math.max(DESIRED_DIFF - timestampDiff, 0)
-      setTimeout(() => {
-        requestAnimationFrame(step)
-      }, nextFrameDelay)
-    }
-    lastTimestamp = timestamp
-  }
-
-  await getBackgroundFrames()
-  requestAnimationFrame(step)
-}
+import CanvasAnimator from '../src/util/CanvasAnimator'
+import DownloadGIFButton from '../src/components/DownloadGIFButton'
 
 export default function Index () {
+  const [text, setText] = React.useState('Nihey was ejected')
+
   React.useEffect(() => {
-    const text = 'Nihey was ejected...'
-    const previewCanvas = document.getElementById('preview-canvas')
-    animateCanvas(previewCanvas, text, 2)
-  }, [])
+    const canvas = document.getElementById('preview-canvas')
+    const animator = new CanvasAnimator(canvas, text)
+    animator.play()
+
+    return () => {
+      animator.stop()
+    }
+  }, [text])
 
   return (
     <div className="page">
-      <canvas id="preview-canvas" className="ejection-preview" width="1920" height="1080"/>
+      <div className="preview-container">
+        <Box
+          className="preview-form"
+          display="flex"
+          alignItems="center"
+          flexDirection="column"
+          mb={2}
+          p={2}
+          pb={2}
+        >
+          <TextField
+            label="Ejection Text"
+            variant="outlined"
+            fullWidth
+            multiline
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+          <Box pt={1}>
+            <DownloadGIFButton
+              text={text}
+            />
+          </Box>
+        </Box>
+        <canvas id="preview-canvas" className="ejection-preview" width="1920" height="1080"/>
+      </div>
       <style jsx>{`
         .page {
           display: flex;
           align-items: center;
           justify-content: center;
+          flex-direction: column;
           height: 100%;
         }
 
-        .ejection-preview {
+        .preview-container {
           width: 600px;
-          border: 1px solid black;
+        }
+
+        .ejection-preview {
+          width: 100%;
+          border: var(--default-border);
+          border-radius: var(--default-border-radius);
+        }
+
+        :global(.preview-form) {
+          border: var(--default-border);
+          border-radius: var(--default-border-radius);
         }
       `}</style>
     </div>
