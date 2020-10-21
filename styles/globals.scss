@@ -15,6 +15,8 @@ body {
 }
 
 #__next {
-  height: 100%;
+  display: flex;
+  min-height: 100%;
   background: black;
+  padding: 16px 0;
 }

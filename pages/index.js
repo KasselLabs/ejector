@@ -3,8 +3,10 @@ import { Box, TextField } from '@material-ui/core'
 
 import CanvasAnimator from '../src/util/CanvasAnimator'
 import DownloadGIFButton from '../src/components/DownloadGIFButton'
+import UploadArea from '../src/components/UploadArea'
 
 export default function Index () {
+  const [image, setImage] = React.useState('/among-us-white-character-color-reduced.png')
   const [text, setText] = React.useState('Nihey was ejected')
 
   React.useEffect(() => {
@@ -29,14 +31,21 @@ export default function Index () {
           p={2}
           pb={2}
         >
-          <TextField
-            label="Ejection Text"
-            variant="outlined"
-            fullWidth
-            multiline
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-          />
+          <Box display="flex" width="100%">
+            <UploadArea
+              value={image}
+              onChange={setImage}
+            />
+            <TextField
+              label="Ejection Text"
+              variant="outlined"
+              fullWidth
+              multiline
+              rows={4}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+            />
+          </Box>
           <Box pt={1}>
             <DownloadGIFButton
               text={text}
@@ -51,7 +60,8 @@ export default function Index () {
           align-items: center;
           justify-content: center;
           flex-direction: column;
-          height: 100%;
+          min-height: 100%;
+          width: 100%;
         }
 
         .preview-container {
