@@ -2,6 +2,7 @@ import React from 'react'
 import { Box, TextField } from '@material-ui/core'
 
 import CanvasAnimator from '../src/util/CanvasAnimator'
+import CharacterGenerator from '../src/components/CharacterGenerator'
 import DownloadGIFButton from '../src/components/DownloadGIFButton'
 import UploadArea from '../src/components/UploadArea'
 
@@ -31,6 +32,9 @@ export default function Index () {
           p={2}
           pb={2}
         >
+          <Box width="100%" pb={3} pt={1}>
+            <CharacterGenerator onChange={setImage}/>
+          </Box>
           <Box display="flex" width="100%">
             <UploadArea
               value={image}
@@ -70,7 +74,7 @@ export default function Index () {
         }
 
         .preview-container {
-          width: 600px;
+          width: 680px;
 
           @media (max-width: 1024px) {
             width: calc(100vw - 32px);
