@@ -6,18 +6,18 @@ import DownloadGIFButton from '../src/components/DownloadGIFButton'
 import UploadArea from '../src/components/UploadArea'
 
 export default function Index () {
-  const [image, setImage] = React.useState('/among-us-white-character-color-reduced.png')
+  const [image, setImage] = React.useState('/among-us-red-character-color-reduced.png')
   const [text, setText] = React.useState('Nihey was ejected')
 
   React.useEffect(() => {
     const canvas = document.getElementById('preview-canvas')
-    const animator = new CanvasAnimator(canvas, text)
+    const animator = new CanvasAnimator(canvas, text, image)
     animator.play()
 
     return () => {
       animator.stop()
     }
-  }, [text])
+  }, [text, image])
 
   return (
     <div className="page">
@@ -49,6 +49,7 @@ export default function Index () {
           <Box pt={1}>
             <DownloadGIFButton
               text={text}
+              image={image}
             />
           </Box>
         </Box>
@@ -62,10 +63,18 @@ export default function Index () {
           flex-direction: column;
           min-height: 100%;
           width: 100%;
+
+          @media (max-width: 1024px) {
+            justify-content: start;
+          }
         }
 
         .preview-container {
           width: 600px;
+
+          @media (max-width: 1024px) {
+            width: calc(100vw - 32px);
+          }
         }
 
         .ejection-preview {

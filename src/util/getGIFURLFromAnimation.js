@@ -1,13 +1,13 @@
 import GIF from 'gif.js'
 import events, { GIF_GENERATION_LOADING_STEP } from '../events'
 
+import getImage from './getImage'
 import drawAnimation from './drawAnimation'
 import {
   ANIMATION_SECONDS,
-  ANIMATION_FRAME_TIME_SECONDS,
-  ANIMATION_SPEEDUP
+  ANIMATION_SPEEDUP,
+  GIF_ANIMATION_FRAME_TIME_DELAY
 } from '../constants/animation'
-const ANIMATION_FRAME_TIME_DELAY = ANIMATION_FRAME_TIME_SECONDS * 5
 
 const getImageElementFromURL = async (url) => {
   return new Promise((resolve, reject) => {
@@ -18,7 +18,9 @@ const getImageElementFromURL = async (url) => {
   })
 }
 
-export default async function getGIFURLFromAnimation (text) {
+export default async function getGIFURLFromAnimation (text, characterImageURL) {
+  const characterImage = await getImage(characterImageURL)
+
   const canvas = document.createElement('canvas')
   canvas.width = 1920 / 4
   canvas.height = 1080 / 4
@@ -28,16 +30,16 @@ export default async function getGIFURLFromAnimation (text) {
     quality: 0
   })
 
-  for (let elapsed = 0; elapsed <= ANIMATION_SECONDS; elapsed += (ANIMATION_FRAME_TIME_DELAY)) {
+  for (let elapsed = 0; elapsed <= ANIMATION_SECONDS; elapsed += (GIF_ANIMATION_FRAME_TIME_DELAY)) {
     const renderingPercentage = elapsed / ANIMATION_SECONDS
     events.emit(GIF_GENERATION_LOADING_STEP, renderingPercentage / 2)
 
-    await drawAnimation(canvas, text, elapsed)
+    await drawAnimation(canvas, text, characterImage, elapsed)
 
     const imageURL = canvas.toDataURL('image/png')
     const image = await getImageElementFromURL(imageURL)
 
-    gif.addFrame(image, { delay: (ANIMATION_FRAME_TIME_DELAY * 1000) / ANIMATION_SPEEDUP })
+    gif.addFrame(image, { delay: (GIF_ANIMATION_FRAME_TIME_DELAY * 1000) / ANIMATION_SPEEDUP })
   }
 
   return new Promise((resolve) => {
