@@ -7,7 +7,8 @@ import {
   DialogTitle,
   DialogContent,
   Typography,
-  Tooltip
+  Tooltip,
+  Slide
 } from '@material-ui/core'
 import CropIcon from '@material-ui/icons/Crop'
 import CloseIcon from '@material-ui/icons/Close'
@@ -16,6 +17,7 @@ import FullscreenIcon from '@material-ui/icons/Fullscreen'
 import FullscreenExitIcon from '@material-ui/icons/FullscreenExit'
 import Cropper from 'react-easy-crop'
 
+import useWindowSize from '../hooks/useWindowSize'
 import getCroppedImage from '../util/getCroppedImage'
 import getResizedImage from '../util/getResizedImage'
 
@@ -29,15 +31,26 @@ const CROP_SIZE = {
   height: 240
 }
 
+const Transition = React.forwardRef(function Transition (props, ref) {
+  return <Slide direction="up" ref={ref} {...props} />
+})
+
 const CropDialog = ({ image, onChange, open, onClose }) => {
   const [mediaSize, setMediaSize] = React.useState(null)
   const [cropArea, setCropArea] = React.useState(null)
   const [crop, setCrop] = React.useState(DEFAULT_CROP)
   const [zoom, setZoom] = React.useState(1)
   const [rotation, setRotation] = React.useState(0)
+  const { isDesktop } = useWindowSize()
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xl">
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="xl"
+      fullScreen={!isDesktop}
+      TransitionComponent={Transition}
+    >
       <DialogTitle id="alert-dialog-title">
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <span>Crop Image</span>
@@ -46,10 +59,9 @@ const CropDialog = ({ image, onChange, open, onClose }) => {
       </DialogTitle>
       <DialogContent>
         <Box
+          className="cropper-container"
           display="flex"
           position="relative"
-          height="50vh"
-          width="50vw"
           borderRadius="5px"
           overflow="hidden"
         >
@@ -207,6 +219,16 @@ const CropDialog = ({ image, onChange, open, onClose }) => {
 
           :global(> *) {
             margin-bottom: 8px;
+          }
+        }
+
+        :global(.cropper-container) {
+          width: 50vw;
+          height: 50vh;
+
+          @media (max-width: 1024px) {
+            width: 100%;
+            height: 60vh;
           }
         }
       `}</style>
