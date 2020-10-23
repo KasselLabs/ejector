@@ -3,6 +3,24 @@ import Document, { Html, Head, Main, NextScript } from 'next/document'
 import { ServerStyleSheets } from '@material-ui/core/styles'
 import theme from '../src/theme'
 
+const isProduction = process.env.ENVIRONMENT === 'production'
+const trackingTags = isProduction ? (
+  <>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-6RL1EL33P6"></script>
+    <script
+      dangerouslySetInnerHTML={{
+        __html: `
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-6RL1EL33P6');
+              `
+      }}
+    />
+  </>
+) : null
+
 export default class MyDocument extends Document {
   render () {
     return (
@@ -17,6 +35,7 @@ export default class MyDocument extends Document {
         </Head>
         <body>
           <Main />
+          { trackingTags }
           <NextScript />
         </body>
       </Html>
