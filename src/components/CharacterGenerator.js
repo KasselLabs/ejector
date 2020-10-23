@@ -5,7 +5,6 @@ import classnames from 'classnames'
 
 import getImage from '../util/getImage'
 
-const COLOR_LIGHT_RED = '#bfa5a1'
 const COLOR_RED = '#d1211d'
 const COLOR_DARK_RED = '#761328'
 
@@ -18,11 +17,9 @@ const getColorChangedImage = async (colorToChange) => {
   context.drawImage(characterImage, 0, 0, canvas.width, canvas.height)
 
   const darkenPercentage = colorToChange.darken || 24
-  const lightenPercentage = colorToChange.lighten || 40
   const parsedColorToChange = tinycolor(colorToChange.value)
   const parsedColorRGBA = parsedColorToChange.toRgb()
   const darkParsedColorRGBA = parsedColorToChange.darken(darkenPercentage).toRgb()
-  const lightParsedColorRGBA = parsedColorToChange.lighten(lightenPercentage).toRgb()
 
   const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
   for (var i = 0; i < imageData.data.length; i += 4) {
@@ -34,11 +31,6 @@ const getColorChangedImage = async (colorToChange) => {
     const colorHex = color.toHexString()
 
     switch (colorHex) {
-      case COLOR_LIGHT_RED:
-        imageData.data[i] = lightParsedColorRGBA.r
-        imageData.data[i + 1] = lightParsedColorRGBA.g
-        imageData.data[i + 2] = lightParsedColorRGBA.b
-        break
       case COLOR_RED:
         imageData.data[i] = parsedColorRGBA.r
         imageData.data[i + 1] = parsedColorRGBA.g
@@ -69,18 +61,18 @@ const generateCharacter = async (canvas, color) => {
 const colors = [
   { value: '#d1211d' },
   { value: '#1e27e2' },
-  { value: '#328100', darken: 10, lighten: 50 },
+  { value: '#328100', darken: 10 },
   //
   { value: '#e052c2' },
   { value: '#e47e00' },
-  { value: '#f6f157' },
+  { value: '#f6f157', darken: 40 },
   //
-  { value: '#3f474e', darken: 10, lighten: 60 },
+  { value: '#3f474e', darken: 10 },
   { value: '#d7e1f1' },
-  { value: '#6b2fbc' },
+  { value: '#6b2fbc', darken: 20 },
   //
-  { value: '#71491e', darken: 10, lighten: 40 },
-  { value: '#74fdd8', darken: 40, lighten: 30 },
+  { value: '#71491e', darken: 10 },
+  { value: '#74fdd8', darken: 40 },
   { value: '#75f100' }
 ]
 
