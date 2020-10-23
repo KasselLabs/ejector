@@ -5,6 +5,7 @@ import CanvasAnimator from '../src/util/CanvasAnimator'
 import CharacterGenerator from '../src/components/CharacterGenerator'
 import DownloadGIFButton from '../src/components/DownloadGIFButton'
 import UploadArea from '../src/components/UploadArea'
+import ImageURLField from '../src/components/ImageURLField'
 
 export default function Index () {
   const [image, setImage] = React.useState('/among-us-red-character-color-reduced.png')
@@ -32,10 +33,12 @@ export default function Index () {
           p={2}
           pb={2}
         >
-          <Box width="100%" pb={3} pt={1}>
-            <CharacterGenerator onChange={setImage}/>
+          <Box width="100%" pb={2} pt={1}>
+            <CharacterGenerator
+              onChange={setImage}
+            />
           </Box>
-          <Box display="flex" width="100%">
+          <Box display="flex" width="100%" pb={2}>
             <UploadArea
               value={image}
               onChange={setImage}
@@ -48,6 +51,12 @@ export default function Index () {
               rows={5}
               value={text}
               onChange={(e) => setText(e.target.value)}
+            />
+          </Box>
+          <Box width="100%">
+            <ImageURLField
+              value={image}
+              onChange={setImage}
             />
           </Box>
           <Box pt={1}>
