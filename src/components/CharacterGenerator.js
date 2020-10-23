@@ -1,5 +1,5 @@
 import React from 'react'
-import { Box } from '@material-ui/core'
+import { Box, Typography } from '@material-ui/core'
 import tinycolor from 'tinycolor2'
 import classnames from 'classnames'
 
@@ -85,22 +85,28 @@ export default function CharacterGenerator ({ onChange }) {
   }, [selectedColor])
 
   return (
-    <Box display="flex" justifyContent="space-between" alignItems="center" width="100%">
-      <canvas id="character-generator" width="125" height="162"/>
-      <Box display="flex" flexWrap="wrap" alignItems="center" justifyContent="center">
-        {colors.map(color => {
-          const isSelected = color.value === selectedColor.value
-          return (
-            <div
-              key={color.value}
-              className={classnames('color-selector', { selected: isSelected })}
-              style={{ background: color.value }}
-              onClick={() => setSelectedColor(color)}
-            />
-          )
-        })}
+    <>
+      <Box pb={1}>
+        <Typography variant="subtitle2">
+        Select Your Character Color:
+        </Typography>
       </Box>
-      <style jsx>{`
+      <Box display="flex" justifyContent="space-between" alignItems="center" width="100%">
+        <canvas id="character-generator" width="125" height="162"/>
+        <Box display="flex" flexWrap="wrap" alignItems="center" justifyContent="center">
+          {colors.map(color => {
+            const isSelected = color.value === selectedColor.value
+            return (
+              <div
+                key={color.value}
+                className={classnames('color-selector', { selected: isSelected })}
+                style={{ background: color.value }}
+                onClick={() => setSelectedColor(color)}
+              />
+            )
+          })}
+        </Box>
+        <style jsx>{`
         .color-selector {
           width: 42px;
           height: 42px;
@@ -117,6 +123,7 @@ export default function CharacterGenerator ({ onChange }) {
           height: 42px;
         }
       `}</style>
-    </Box>
+      </Box>
+    </>
   )
 }

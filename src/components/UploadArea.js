@@ -37,6 +37,7 @@ export default function UploadArea ({ label, sublabel, value, onChange }) {
           }}
         />
         {value && <img className="image-preview" src={value} height="32"/>}
+        <span className="or-text">OR</span>
         <span className="upload-text">
           {
             loading
@@ -52,13 +53,15 @@ export default function UploadArea ({ label, sublabel, value, onChange }) {
         onChange={onChange}
       />
       <style jsx>{`
+        $size: 132px;
         .upload-area {
+          position: relative;
           display: flex;
           align-items: center;
           justify-content: center;
           flex-direction: column;
-          min-width: 113px;
-          max-width: 113px;
+          min-width: $size;
+          max-width: $size;
           min-height: 100%;
           border: var(--default-border);
           border-radius: var(--default-border-radius);
@@ -68,6 +71,16 @@ export default function UploadArea ({ label, sublabel, value, onChange }) {
 
           > .image-preview {
             margin-bottom: 8px;
+          }
+
+          > .or-text {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: black;
+            padding: 4px 8px;
           }
 
           > .upload-text {

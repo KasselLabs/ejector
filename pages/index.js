@@ -45,7 +45,7 @@ export default function Index () {
               variant="outlined"
               fullWidth
               multiline
-              rows={4}
+              rows={5}
               value={text}
               onChange={(e) => setText(e.target.value)}
             />
