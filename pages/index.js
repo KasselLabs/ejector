@@ -10,7 +10,7 @@ import ImageURLField from '../src/components/ImageURLField'
 
 export default function Index () {
   const [image, setImage] = useState('/among-us-red-character-color-reduced.png')
-  const [text, setText] = useState('Nihey was ejected')
+  const [text, setText] = useState('You were ejected')
 
   useEffect(() => {
     const canvas = document.getElementById('preview-canvas')
