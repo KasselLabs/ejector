@@ -31,7 +31,7 @@ function drawCharacter (canvas, context, characterImage, elapsed) {
   const positionX = canvas.width * (SPEED_X * elapsed)
 
   const aspectRatio = characterImage.width / characterImage.height
-  const height = canvas.height / 5
+  const height = canvas.height / 4.46
   const width = height * aspectRatio
 
   context.save()
