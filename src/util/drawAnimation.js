@@ -107,8 +107,8 @@ const drawAnimation = async (canvas, text, characterImage, elapsed) => {
   context.clearRect(0, 0, width, height)
   await drawBackgroundVideo(canvas, elapsed)
 
-  drawCharacter(canvas, context, characterImage, elapsed)
   drawText(canvas, context, text, elapsed)
+  drawCharacter(canvas, context, characterImage, elapsed)
   drawWatermark(canvas, context)
 }
 
