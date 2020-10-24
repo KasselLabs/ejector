@@ -13,7 +13,15 @@ export default class CanvasAnimator {
     this.characterImageURL = characterImageURL
   }
 
+  playAudio () {
+    window.ejectedAudio.currentTime = 0
+    if (window.audioOn) {
+      window.ejectedAudio.play()
+    }
+  }
+
   async play () {
+    this.playAudio()
     const characterImage = await getImage(this.characterImageURL)
 
     const timer = new Timer()
@@ -30,9 +38,11 @@ export default class CanvasAnimator {
       const shouldResetAnimation = getElapsedSeconds() >= ANIMATION_SECONDS
       if (shouldResetAnimation) {
         timer.reset()
+        this.playAudio()
       }
 
       const elapsed = getElapsedSeconds()
+      window.elapsedAnimationTime = elapsed
       await drawAnimation(this.canvas, this.ejectedText, this.impostorText, characterImage, elapsed)
 
       const elapsedDiff = timer.elapsedDiff() / 1000

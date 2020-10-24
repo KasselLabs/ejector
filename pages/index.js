@@ -7,6 +7,7 @@ import CharacterGenerator from '../src/components/CharacterGenerator'
 import DownloadGIFButton from '../src/components/DownloadGIFButton'
 import UploadArea from '../src/components/UploadArea'
 import ImageURLField from '../src/components/ImageURLField'
+import SoundControl from '../src/components/SoundControl'
 
 export default function Index () {
   const [image, setImage] = useState('/among-us-red-character-color-reduced.png')
@@ -49,6 +50,10 @@ export default function Index () {
           p={2}
           pb={2}
         >
+          <Box display="flex" justifyContent="space-between" alignItems="center" width="100%">
+            <h1>Ejector</h1>
+            <SoundControl />
+          </Box>
           <Box width="100%" pb={2} pt={1}>
             <CharacterGenerator
               onChange={setImage}
