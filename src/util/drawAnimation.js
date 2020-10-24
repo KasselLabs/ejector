@@ -86,7 +86,7 @@ function drawWatermark (canvas, context) {
   const rightPadding = 0.008 * width
   const bottomPadding = -0.018 * height
   const fontSize = 0.08 * height
-  context.fillStyle = 'rgba(255, 255, 255, 0.4)'
+  context.fillStyle = 'rgba(255, 255, 255, 0.6)'
   canvasTxt.font = 'Arial'
   canvasTxt.fontSize = fontSize
   canvasTxt.vAlign = 'bottom'
