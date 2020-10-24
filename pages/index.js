@@ -1,5 +1,5 @@
 import React from 'react'
-import { Box, TextField } from '@material-ui/core'
+import { Typography, Box, TextField } from '@material-ui/core'
 import Head from 'next/head'
 
 import CanvasAnimator from '../src/util/CanvasAnimator'
@@ -82,6 +82,29 @@ export default function Index () {
           </Box>
         </Box>
         <canvas id="preview-canvas" className="ejection-preview" width="1920" height="1080"/>
+        <Box pt={1}>
+          <Box display="flex" alignItems="center" justifyContent="center" width="100%">
+            Made with love by
+            &nbsp;
+            <a
+              className="kassel-labs-logo"
+              target="_blank"
+              rel="noopener noreferrer"
+              href="https://kassellabs.io/"
+            >
+              <img src="/kassel-labs-logo.svg" height="24"/>
+            </a>
+          </Box>
+          <Box display="flex" justifyContent="center" width="100%" flexWrap="wrap">
+            Want to discover more web apps like this?
+            &nbsp;
+            <a
+              target="_blank"
+              rel="noopener noreferrer"
+              href="https://kassellabs.io/"
+            >Check our website</a>
+          </Box>
+        </Box>
       </div>
       <style jsx>{`
         .page {
@@ -109,6 +132,11 @@ export default function Index () {
           width: 100%;
           border: var(--default-border);
           border-radius: var(--default-border-radius);
+        }
+
+        .kassel-labs-logo {
+          display: inline-flex;
+          align-items: center;
         }
 
         :global(.preview-form) {
