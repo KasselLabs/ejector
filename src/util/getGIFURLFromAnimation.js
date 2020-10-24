@@ -26,7 +26,7 @@ const getImageElementFromURL = async (url) => {
   })
 }
 
-export default async function getGIFURLFromAnimation (text, characterImageURL) {
+export default async function getGIFURLFromAnimation (ejectedText, impostorText, characterImageURL) {
   const characterImage = await getImage(characterImageURL)
 
   const canvas = document.createElement('canvas')
@@ -41,8 +41,7 @@ export default async function getGIFURLFromAnimation (text, characterImageURL) {
   for (let elapsed = 0; elapsed <= ANIMATION_SECONDS; elapsed += (GIF_ANIMATION_FRAME_TIME_DELAY)) {
     const renderingPercentage = elapsed / ANIMATION_SECONDS
     events.emit(GIF_GENERATION_LOADING_STEP, renderingPercentage / 2)
-
-    await drawAnimation(canvas, text, characterImage, elapsed)
+    await drawAnimation(canvas, ejectedText, impostorText, characterImage, elapsed)
 
     const imageURL = canvas.toDataURL('image/png')
     const image = await getImageElementFromURL(imageURL)
@@ -54,7 +53,7 @@ export default async function getGIFURLFromAnimation (text, characterImageURL) {
     gif.on('finished', (blob) => {
       const blobURL = URL.createObjectURL(blob)
       resolve(blobURL)
-      uploadFileToSpaces(text, 'gif', blobToFile(blob, 'ejection.gif'))
+      uploadFileToSpaces(ejectedText, 'gif', blobToFile(blob, 'ejection.gif'))
     })
 
     gif.on('progress', (percentage) => {

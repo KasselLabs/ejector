@@ -47,7 +47,7 @@ function drawCharacter (canvas, context, characterImage, elapsed) {
   context.restore()
 }
 
-function getTextToDisplay (text, elapsed) {
+function getEjectedTextToDisplay (text, elapsed) {
   const START_SECONDS = 1.7
   const DURATION_SECONDS = 2
   const FINISHED_SECONDS = START_SECONDS + DURATION_SECONDS
@@ -66,17 +66,57 @@ function getTextToDisplay (text, elapsed) {
   return text.slice(0, textDisplayLength)
 }
 
-function drawText (canvas, context, text = '', elapsed = 0) {
+function drawEjectedText (canvas, context, text = '', elapsed = 0) {
   const canvasTxt = require('canvas-txt').default
   const { width, height } = canvas
 
-  const textToDisplay = getTextToDisplay(text, elapsed)
+  const textToDisplay = getEjectedTextToDisplay(text, elapsed)
   context.fillStyle = 'white'
   canvasTxt.font = 'Arial'
   canvasTxt.fontSize = 0.067 * height
   canvasTxt.vAlign = 'middle'
   canvasTxt.align = 'center'
   canvasTxt.drawText(context, textToDisplay, 0, 0, width, height)
+}
+
+function drawImpostorText (canvas, context, text = '', elapsed = 0) {
+  const canvasTxt = require('canvas-txt').default
+  const { width, height } = canvas
+
+  const START_IMPOSTOR_TEXT_SECONDS = 3.8
+  const diffElapsed = elapsed - START_IMPOSTOR_TEXT_SECONDS
+
+  const animationStages = [0, 0.33, 0.66, 1, 1.2]
+  const animationFontSize = [0.7, 1.2, 0.8, 1.1, 1]
+
+  const indexTime = animationStages.findIndex((value, index) => {
+    return diffElapsed < value
+  })
+
+  if (diffElapsed <= 0) {
+    return
+  }
+
+  let fontSize = 1
+  if (indexTime === -1) {
+    fontSize = 1
+  } else {
+    const initialTime = animationStages[indexTime - 1]
+    const endDuration = animationStages[indexTime] - initialTime
+    const interpolatedTime = (diffElapsed - initialTime) / endDuration
+
+    const fontSizeStart = animationFontSize[indexTime - 1]
+    const fontSizeNext = animationFontSize[indexTime]
+    const fontSizeDiff = fontSizeNext - fontSizeStart
+    fontSize = fontSizeStart + (fontSizeDiff * interpolatedTime)
+  }
+
+  context.fillStyle = 'white'
+  canvasTxt.font = 'Arial'
+  canvasTxt.fontSize = 0.067 * height * fontSize
+  canvasTxt.vAlign = 'middle'
+  canvasTxt.align = 'center'
+  canvasTxt.drawText(context, text, 0, 0.0804 * height, width, height)
 }
 
 function drawWatermark (canvas, context) {
@@ -101,13 +141,14 @@ function drawWatermark (canvas, context) {
   )
 }
 
-const drawAnimation = async (canvas, text, characterImage, elapsed) => {
+const drawAnimation = async (canvas, ejectedText, impostorText, characterImage, elapsed) => {
   const { width, height } = canvas
   const context = canvas.getContext('2d')
   context.clearRect(0, 0, width, height)
   await drawBackgroundVideo(canvas, elapsed)
 
-  drawText(canvas, context, text, elapsed)
+  drawEjectedText(canvas, context, ejectedText, elapsed)
+  drawImpostorText(canvas, context, impostorText, elapsed)
   drawCharacter(canvas, context, characterImage, elapsed)
   drawWatermark(canvas, context)
 }

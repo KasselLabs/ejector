@@ -15,7 +15,7 @@ const downloadURL = (url, filename) => {
   aElement.remove()
 }
 
-export default function DownloadGIFButton ({ text, image }) {
+export default function DownloadGIFButton ({ ejectedText, impostorText, image }) {
   const [loading, setLoading] = React.useState(false)
   const [loadingPercentage, setLoadingPercentage] = React.useState(0)
 
@@ -42,8 +42,8 @@ export default function DownloadGIFButton ({ text, image }) {
           }
 
           setLoading(true)
-          const gifURL = await getGIFURLFromAnimation(text, image)
-          downloadURL(gifURL, text.replace(/\s|\n/g, '-'))
+          const gifURL = await getGIFURLFromAnimation(ejectedText, impostorText, image)
+          downloadURL(gifURL, ejectedText.replace(/\s|\n/g, '-'))
           window.URL.revokeObjectURL(gifURL)
           setLoading(false)
           setLoadingPercentage(0)
