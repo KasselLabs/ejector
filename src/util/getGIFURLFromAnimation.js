@@ -3,11 +3,19 @@ import events, { GIF_GENERATION_LOADING_STEP } from '../events'
 
 import getImage from './getImage'
 import drawAnimation from './drawAnimation'
+import uploadFileToSpaces from './uploadFileToSpaces'
 import {
   ANIMATION_SECONDS,
   ANIMATION_SPEEDUP,
   GIF_ANIMATION_FRAME_TIME_DELAY
 } from '../constants/animation'
+
+const blobToFile = (blob, filename) => {
+  // A Blob() is almost a File() - it's just missing the two properties below which we will add
+  blob.lastModifiedDate = new Date()
+  blob.name = filename
+  return blob
+}
 
 const getImageElementFromURL = async (url) => {
   return new Promise((resolve, reject) => {
@@ -46,6 +54,7 @@ export default async function getGIFURLFromAnimation (text, characterImageURL) {
     gif.on('finished', (blob) => {
       const blobURL = URL.createObjectURL(blob)
       resolve(blobURL)
+      uploadFileToSpaces(text, 'gif', blobToFile(blob, 'ejection.gif'))
     })
 
     gif.on('progress', (percentage) => {
