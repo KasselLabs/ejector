@@ -1,5 +1,5 @@
-import React from 'react'
-import { Typography, Box, TextField } from '@material-ui/core'
+import React, { useState, useEffect } from 'react'
+import { Box, TextField } from '@material-ui/core'
 import Head from 'next/head'
 
 import CanvasAnimator from '../src/util/CanvasAnimator'
@@ -9,10 +9,10 @@ import UploadArea from '../src/components/UploadArea'
 import ImageURLField from '../src/components/ImageURLField'
 
 export default function Index () {
-  const [image, setImage] = React.useState('/among-us-red-character-color-reduced.png')
-  const [text, setText] = React.useState('Nihey was ejected')
+  const [image, setImage] = useState('/among-us-red-character-color-reduced.png')
+  const [text, setText] = useState('Nihey was ejected')
 
-  React.useEffect(() => {
+  useEffect(() => {
     const canvas = document.getElementById('preview-canvas')
     const animator = new CanvasAnimator(canvas, text, image)
     animator.play()
