@@ -10,17 +10,18 @@ import ImageURLField from '../src/components/ImageURLField'
 
 export default function Index () {
   const [image, setImage] = useState('/among-us-red-character-color-reduced.png')
-  const [text, setText] = useState('You were ejected')
+  const [ejectedText, setEjectedText] = useState('Red was not The Impostor')
+  const [impostorText, setImpostorText] = useState('1 Impostor remains')
 
   useEffect(() => {
     const canvas = document.getElementById('preview-canvas')
-    const animator = new CanvasAnimator(canvas, text, image)
+    const animator = new CanvasAnimator(canvas, ejectedText, impostorText, image)
     animator.play()
 
     return () => {
       animator.stop()
     }
-  }, [text, image])
+  }, [ejectedText, impostorText, image])
 
   return (
     <div className="page">
@@ -58,15 +59,25 @@ export default function Index () {
               value={image}
               onChange={setImage}
             />
-            <TextField
-              label="Ejection Text"
-              variant="outlined"
-              fullWidth
-              multiline
-              rows={5}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-            />
+            <Box display="flex" flexDirection="column" width="100%" >
+              <TextField
+                label="Ejection Text"
+                variant="outlined"
+                fullWidth
+                rows={1}
+                value={ejectedText}
+                onChange={(e) => setEjectedText(e.target.value)}
+                style={{ paddingBottom: '2em' }}
+              />
+              <TextField
+                label="Impostor Remain text"
+                variant="outlined"
+                fullWidth
+                rows={1}
+                value={impostorText}
+                onChange={(e) => setImpostorText(e.target.value)}
+              />
+            </Box>
           </Box>
           <Box width="100%">
             <ImageURLField
@@ -76,7 +87,8 @@ export default function Index () {
           </Box>
           <Box pt={1}>
             <DownloadGIFButton
-              text={text}
+              ejectedText={ejectedText}
+              impostorText={impostorText}
               image={image}
             />
           </Box>
