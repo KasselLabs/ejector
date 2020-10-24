@@ -8,6 +8,19 @@ async function drawBackgroundVideo (canvas, elapsed = 0) {
 
   const context = canvas.getContext('2d')
   context.drawImage(frame, 0, 0, canvas.width, canvas.height)
+
+  // Fill Tiny Imperfection on Background with a black rectangle
+  const imperfectionPositionX = canvas.width * 0.5
+  const imperfectionPositionY = canvas.height * 0.65
+  const imperfectionWidth = canvas.width * 0.05
+  const imperfectionHeight = canvas.height * 0.09
+  context.fillStyle = 'black'
+  context.fillRect(
+    imperfectionPositionX,
+    imperfectionPositionY,
+    imperfectionWidth,
+    imperfectionHeight
+  )
 }
 
 function drawCharacter (canvas, context, characterImage, elapsed) {
