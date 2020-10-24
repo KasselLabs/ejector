@@ -11,7 +11,9 @@ const SoundControl = () => {
     setAudioOn(nexState)
     if (nexState) {
       ambianceAudio.current.play()
-      ejectedAudio.current.currentTime = window.elapsedAnimationTime
+      if (window.elapsedAnimationTime) {
+        ejectedAudio.current.currentTime = window.elapsedAnimationTime
+      }
       ejectedAudio.current.play()
     }
     if (!nexState) {
