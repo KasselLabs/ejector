@@ -90,7 +90,7 @@ export default function Index () {
               onChange={setImage}
             />
           </Box>
-          <Box pt={1}>
+          <Box pt={1} width="100%">
             <DownloadGIFButton
               ejectedText={ejectedText}
               impostorText={impostorText}

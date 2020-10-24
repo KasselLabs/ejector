@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import classnames from 'classnames'
+import { withStyles } from '@material-ui/core/styles'
+import { Box, Container, Button, LinearProgress } from '@material-ui/core'
 
-import { Button } from '@material-ui/core'
 import events, { GIF_GENERATION_LOADING_STEP } from '../events'
 import getGIFURLFromAnimation from '../util/getGIFURLFromAnimation'
 
@@ -15,11 +16,28 @@ const downloadURL = (url, filename) => {
   aElement.remove()
 }
 
-export default function DownloadGIFButton ({ ejectedText, impostorText, image }) {
-  const [loading, setLoading] = React.useState(false)
-  const [loadingPercentage, setLoadingPercentage] = React.useState(0)
+const CustomLinearProgress = withStyles((theme) => ({
+  root: {
+    height: 10,
+    borderRadius: 5
+  },
+  colorPrimary: {
+    backgroundColor: theme.palette.grey[800]
+  },
+  bar: {
+    borderRadius: 5,
+    backgroundColor: theme.palette.success.main
+  }
+}))(LinearProgress)
 
-  React.useEffect(() => {
+export default function DownloadGIFButton ({ ejectedText, impostorText, image }) {
+  const [loading, setLoading] = useState(false)
+  const [loadingPercentage, setLoadingPercentage] = useState(0)
+
+  const inprogressAudio = useRef(null)
+  const completeAudio = useRef(null)
+
+  useEffect(() => {
     const onLoadingStep = (percentage) => {
       setLoadingPercentage(Math.round(percentage * 100))
     }
@@ -31,39 +49,49 @@ export default function DownloadGIFButton ({ ejectedText, impostorText, image })
   }, [])
 
   return (
-    <>
-      <Button
-        className={classnames('download-gif-button', { loading })}
-        variant="contained"
-        color="primary"
-        onClick={async () => {
-          if (loading) {
-            return
-          }
+    <Box display="flex" flexDirection="column" width="100%" align="center">
+      <audio src="/task_Inprogress.mp3" ref={inprogressAudio} />
+      <audio src="/task_Complete.mp3" ref={completeAudio} />
+      <Container>
+        <Button
+          className={classnames('download-gif-button', { loading })}
+          variant="contained"
+          color="primary"
+          onClick={async () => {
+            if (loading) {
+              return
+            }
 
-          setLoading(true)
-          const gifURL = await getGIFURLFromAnimation(ejectedText, impostorText, image)
-          downloadURL(gifURL, ejectedText.replace(/\s|\n/g, '-'))
-          window.URL.revokeObjectURL(gifURL)
-          setLoading(false)
-          setLoadingPercentage(0)
-        }}
-      >
-        {
-          loading
-            ? (
-              <span>
+            setLoading(true)
+            inprogressAudio.current.play()
+            const gifURL = await getGIFURLFromAnimation(ejectedText, impostorText, image)
+            downloadURL(gifURL, ejectedText.replace(/\s|\n/g, '-'))
+            window.URL.revokeObjectURL(gifURL)
+            setLoading(false)
+            setLoadingPercentage(0)
+            completeAudio.current.play()
+          }}
+        >
+          {
+            loading
+              ? (
+                <span>
                 Generating GIF ({loadingPercentage}%)
-              </span>
-            )
-            : 'Download GIF'
+                </span>
+              )
+              : 'Download GIF'
+          }
+        </Button>
+        {loading &&
+          <CustomLinearProgress className="loading-progress" variant="determinate" value={loadingPercentage} />
         }
-      </Button>
-      <style jsx>{`
+        <style jsx>{`
         :global(.download-gif-button.loading) {
           pointer-events: none;
+          margin-bottom: 1em;
         }
       `}</style>
-    </>
+      </Container>
+    </Box>
   )
 }
