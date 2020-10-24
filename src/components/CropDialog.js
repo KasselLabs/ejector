@@ -6,6 +6,7 @@ import {
   Slider,
   DialogTitle,
   DialogContent,
+  CircularProgress,
   Typography,
   Tooltip,
   Slide
@@ -41,6 +42,7 @@ const CropDialog = ({ image, onChange, open, onClose }) => {
   const [crop, setCrop] = React.useState(DEFAULT_CROP)
   const [zoom, setZoom] = React.useState(1)
   const [rotation, setRotation] = React.useState(0)
+  const [loading, setLoading] = React.useState(false)
   const { isDesktop } = useWindowSize()
 
   return (
@@ -194,7 +196,9 @@ const CropDialog = ({ image, onChange, open, onClose }) => {
           color="primary"
           variant="contained"
           startIcon={<CropIcon/>}
+          disabled={loading}
           onClick={async () => {
+            setLoading(true)
             const croppedImage = await getCroppedImage(image, cropArea, rotation)
             const resizedImage = await getResizedImage(
               croppedImage,
@@ -202,9 +206,21 @@ const CropDialog = ({ image, onChange, open, onClose }) => {
             )
             onChange(resizedImage)
             onClose()
+            setLoading(false)
           }}
         >
-          Confirm
+          {
+            loading
+              ? (
+                <Box display="inline-flex">
+                  Loading
+                  <Box display="flex" justifyContent="center" alignItems="center" ml={1}>
+                    <CircularProgress size={16}/>
+                  </Box>
+                </Box>
+              )
+              : 'Confirm'
+          }
         </Button>
       </Box>
       <style jsx>{`
