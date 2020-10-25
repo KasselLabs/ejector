@@ -2,7 +2,7 @@
 
 > An Among Us tribute application to create GIF with the eject scene
 
-![https://ejector.kassellabs.io/](./sample.gif)
+[![https://ejector.kassellabs.io/](./sample.gif)](https://ejector.kassellabs.io/)
 
 **https://ejector.kassellabs.io/**
 
