@@ -8,6 +8,7 @@ import DownloadGIFButton from '../src/components/DownloadGIFButton'
 import UploadArea from '../src/components/UploadArea'
 import ImageURLField from '../src/components/ImageURLField'
 import SoundControl from '../src/components/SoundControl'
+import ProductHuntButton from '../src/components/ProductHuntButton'
 
 export default function Index () {
   const [image, setImage] = useState('/among-us-red-character-color-reduced.png')
@@ -50,8 +51,21 @@ export default function Index () {
           p={2}
           pb={2}
         >
-          <Box display="flex" justifyContent="space-between" alignItems="center" width="100%">
-            <h1>Ejector</h1>
+          <Box
+            className="header"
+            display="flex"
+            alignItems="center"
+            justifyContent="space-between"
+            width="100%"
+          >
+            <Box display="flex" alignItems="center">
+              <h1>
+                Ejector
+              </h1>
+              <Box pl={2}>
+                <ProductHuntButton />
+              </Box>
+            </Box>
             <SoundControl />
           </Box>
           <Box width="100%" pb={2} pt={1}>
@@ -134,6 +148,13 @@ export default function Index () {
 
           @media (max-width: 1024px) {
             justify-content: start;
+          }
+        }
+
+        :global(.header) {
+          @media (max-width: 1024px) {
+            flex-wrap: wrap;
+            justify-content: center !important;
           }
         }
 
