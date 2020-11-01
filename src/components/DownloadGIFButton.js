@@ -3,6 +3,7 @@ import classnames from 'classnames'
 import { withStyles } from '@material-ui/core/styles'
 import { Box, Container, Button, LinearProgress } from '@material-ui/core'
 
+import { withTranslation } from '../../i18n'
 import events, { GIF_GENERATION_LOADING_STEP } from '../events'
 import getGIFURLFromAnimation from '../util/getGIFURLFromAnimation'
 
@@ -30,7 +31,7 @@ const CustomLinearProgress = withStyles((theme) => ({
   }
 }))(LinearProgress)
 
-export default function DownloadGIFButton ({ ejectedText, impostorText, image }) {
+function DownloadGIFButton ({ t, ejectedText, impostorText, image }) {
   const [loading, setLoading] = useState(false)
   const [loadingPercentage, setLoadingPercentage] = useState(0)
 
@@ -76,10 +77,10 @@ export default function DownloadGIFButton ({ ejectedText, impostorText, image })
             loading
               ? (
                 <span>
-                Generating GIF ({loadingPercentage}%)
+                  {t('Generating GIF')} ({loadingPercentage}%)
                 </span>
               )
-              : 'Download GIF'
+              : t('Download GIF')
           }
         </Button>
         {loading &&
@@ -95,3 +96,5 @@ export default function DownloadGIFButton ({ ejectedText, impostorText, image })
     </Box>
   )
 }
+
+export default withTranslation('common')(DownloadGIFButton)

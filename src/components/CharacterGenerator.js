@@ -3,6 +3,7 @@ import { Box, Typography } from '@material-ui/core'
 import tinycolor from 'tinycolor2'
 import classnames from 'classnames'
 
+import { withTranslation } from '../../i18n'
 import getImage from '../util/getImage'
 
 const COLOR_RED = '#d1211d'
@@ -76,7 +77,7 @@ const colors = [
   { value: '#75f100' }
 ]
 
-export default function CharacterGenerator ({ onChange }) {
+function CharacterGenerator ({ t, onChange }) {
   const [selectedColor, setSelectedColor] = React.useState(colors[0])
 
   React.useEffect(() => {
@@ -88,7 +89,7 @@ export default function CharacterGenerator ({ onChange }) {
     <>
       <Box pb={1}>
         <Typography variant="subtitle2">
-        Select Your Character Color:
+          { t('Select Your Character Color') }:
         </Typography>
       </Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" width="100%">
@@ -127,3 +128,5 @@ export default function CharacterGenerator ({ onChange }) {
     </>
   )
 }
+
+export default withTranslation('common')(CharacterGenerator)

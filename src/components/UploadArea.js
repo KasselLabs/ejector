@@ -2,10 +2,11 @@ import React from 'react'
 import classnames from 'classnames'
 import { CircularProgress } from '@material-ui/core'
 
+import { withTranslation } from '../../i18n'
 import CropDialog from './CropDialog'
 import getURLFromFile from '../util/getURLFromFile'
 
-export default function UploadArea ({ label, sublabel, value, onChange }) {
+function UploadArea ({ t, label, sublabel, value, onChange }) {
   const fileInputRef = React.useRef()
   const [loading, setLoading] = React.useState(false)
   const [imageToCrop, setImageToCrop] = React.useState(null)
@@ -37,12 +38,12 @@ export default function UploadArea ({ label, sublabel, value, onChange }) {
           }}
         />
         {value && <img className="image-preview" src={value} height="32"/>}
-        <span className="or-text">OR</span>
+        <span className="or-text">{t('OR')}</span>
         <span className="upload-text">
           {
             loading
               ? <CircularProgress size={52}/>
-              : 'Upload an Ejection Image Here'
+              : t('Upload an Ejection Image Here')
           }
         </span>
       </div>
@@ -97,3 +98,5 @@ export default function UploadArea ({ label, sublabel, value, onChange }) {
     </>
   )
 }
+
+export default withTranslation('common')(UploadArea)

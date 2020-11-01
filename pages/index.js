@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Box, TextField } from '@material-ui/core'
 import Head from 'next/head'
 
+import { withTranslation } from '../i18n'
 import CanvasAnimator from '../src/util/CanvasAnimator'
 import CharacterGenerator from '../src/components/CharacterGenerator'
 import DownloadGIFButton from '../src/components/DownloadGIFButton'
@@ -10,10 +11,10 @@ import ImageURLField from '../src/components/ImageURLField'
 import SoundControl from '../src/components/SoundControl'
 import ProductHuntButton from '../src/components/ProductHuntButton'
 
-export default function Index () {
+function Index ({ t }) {
   const [image, setImage] = useState('/among-us-red-character-color-reduced.png')
-  const [ejectedText, setEjectedText] = useState('Red was not The Impostor')
-  const [impostorText, setImpostorText] = useState('1 Impostor remains')
+  const [ejectedText, setEjectedText] = useState(t('Red was not The Impostor'))
+  const [impostorText, setImpostorText] = useState(t('1 Impostor remains'))
 
   useEffect(() => {
     const canvas = document.getElementById('preview-canvas')
@@ -28,7 +29,7 @@ export default function Index () {
   return (
     <div className="page">
       <Head>
-        <title>Ejector - Eject Someone</title>
+        <title>{t('Ejector - Eject Someone')}</title>
         <meta property="og:title" content="Ejector" />
         <meta property="og:type" content="website" />
         <meta property="og:description" content="Create an Among Us ejection animation for fun!" />
@@ -60,7 +61,7 @@ export default function Index () {
           >
             <Box display="flex" alignItems="center">
               <h1>
-                Ejector
+                {t('Ejector')}
               </h1>
               <Box pl={2}>
                 <ProductHuntButton />
@@ -80,7 +81,7 @@ export default function Index () {
             />
             <Box display="flex" flexDirection="column" width="100%" >
               <TextField
-                label="Ejection Text"
+                label={t('Ejection Text')}
                 variant="outlined"
                 fullWidth
                 rows={1}
@@ -89,7 +90,7 @@ export default function Index () {
                 style={{ paddingBottom: '2em' }}
               />
               <TextField
-                label="Impostor Remain text"
+                label={t('Impostor Remain text')}
                 variant="outlined"
                 fullWidth
                 rows={1}
@@ -115,7 +116,7 @@ export default function Index () {
         <canvas id="preview-canvas" className="ejection-preview" width="1920" height="1080"/>
         <Box pt={1}>
           <Box display="flex" alignItems="center" justifyContent="center" width="100%">
-            Made with love by
+            {t('Made with love by')}
             &nbsp;
             <a
               className="kassel-labs-logo"
@@ -127,13 +128,13 @@ export default function Index () {
             </a>
           </Box>
           <Box display="flex" justifyContent="center" width="100%" flexWrap="wrap">
-            Want to discover more web apps like this?
+            {t('Want to discover more web apps like this?')}
             &nbsp;
             <a
               target="_blank"
               rel="noopener noreferrer"
               href="https://kassellabs.io/"
-            >Check our website</a>
+            >{t('Check our website')}</a>
           </Box>
         </Box>
       </div>
@@ -185,3 +186,9 @@ export default function Index () {
     </div>
   )
 }
+
+Index.getInitialProps = () => ({
+  namespacesRequired: 'common'
+})
+
+export default withTranslation('common')(Index)
