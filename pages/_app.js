@@ -3,11 +3,12 @@ import PropTypes from 'prop-types'
 import Head from 'next/head'
 import { ThemeProvider } from '@material-ui/core/styles'
 import CssBaseline from '@material-ui/core/CssBaseline'
+import { appWithTranslation } from '../i18n'
 import theme from '../src/theme'
 
 import '../styles/globals.scss'
 
-export default function MyApp (props) {
+function MyApp (props) {
   const { Component, pageProps } = props
 
   React.useEffect(() => {
@@ -37,3 +38,5 @@ MyApp.propTypes = {
   Component: PropTypes.elementType.isRequired,
   pageProps: PropTypes.object.isRequired
 }
+
+export default appWithTranslation(MyApp)

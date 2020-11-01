@@ -18,6 +18,7 @@ import FullscreenIcon from '@material-ui/icons/Fullscreen'
 import FullscreenExitIcon from '@material-ui/icons/FullscreenExit'
 import Cropper from 'react-easy-crop'
 
+import { withTranslation } from '../../i18n'
 import useWindowSize from '../hooks/useWindowSize'
 import getCroppedImage from '../util/getCroppedImage'
 import getResizedImage from '../util/getResizedImage'
@@ -36,7 +37,7 @@ const Transition = React.forwardRef(function Transition (props, ref) {
   return <Slide direction="up" ref={ref} {...props} />
 })
 
-const CropDialog = ({ image, onChange, open, onClose }) => {
+const CropDialog = ({ t, image, onChange, open, onClose }) => {
   const [mediaSize, setMediaSize] = React.useState(null)
   const [cropArea, setCropArea] = React.useState(null)
   const [crop, setCrop] = React.useState(DEFAULT_CROP)
@@ -55,7 +56,7 @@ const CropDialog = ({ image, onChange, open, onClose }) => {
     >
       <DialogTitle id="alert-dialog-title">
         <Box display="flex" justifyContent="space-between" alignItems="center">
-          <span>Crop Image</span>
+          <span>{t('Crop Image')}</span>
           <CloseIcon onClick={onClose}/>
         </Box>
       </DialogTitle>
@@ -93,7 +94,7 @@ const CropDialog = ({ image, onChange, open, onClose }) => {
               flexDirection="column"
             >
               <Box style={{ transform: 'rotate(90deg)' }}>
-                <Tooltip title="Center the image horizontally" placement="right">
+                <Tooltip title={t('Center the image horizontally')} placement="right">
                   <Button
                     variant="contained"
                     color="primary"
@@ -105,7 +106,7 @@ const CropDialog = ({ image, onChange, open, onClose }) => {
                   </Button>
                 </Tooltip>
               </Box>
-              <Tooltip title="Center the image vertically" placement="right">
+              <Tooltip title={t('Center the image vertically')} placement="right">
                 <Button
                   variant="contained"
                   color="primary"
@@ -116,7 +117,7 @@ const CropDialog = ({ image, onChange, open, onClose }) => {
                   <VerticalAlignCenterIcon/>
                 </Button>
               </Tooltip>
-              <Tooltip title="Fits the image inside the crop area" placement="right">
+              <Tooltip title={t('Fits the image inside the crop area')} placement="right">
                 <Button
                   variant="contained"
                   color="primary"
@@ -135,7 +136,7 @@ const CropDialog = ({ image, onChange, open, onClose }) => {
                   <FullscreenExitIcon/>
                 </Button>
               </Tooltip>
-              <Tooltip title="Fill the crop area with the image" placement="right">
+              <Tooltip title={t('Fill the crop area with the image')} placement="right">
                 <Button
                   variant="contained"
                   color="primary"
@@ -159,7 +160,7 @@ const CropDialog = ({ image, onChange, open, onClose }) => {
         </Box>
         <Box display="flex" justifyContent="space-between" mt={2}>
           <Box width="50%" pr={1}>
-            <Typography gutterBottom>Zoom</Typography>
+            <Typography gutterBottom>{t('Zoom')}</Typography>
             <Slider
               value={zoom}
               onChange={(event, newZoom) => setZoom(newZoom)}
@@ -171,7 +172,7 @@ const CropDialog = ({ image, onChange, open, onClose }) => {
             />
           </Box>
           <Box width="50%" pl={1}>
-            <Typography gutterBottom>Rotation</Typography>
+            <Typography gutterBottom>{t('Rotation')}</Typography>
             <Slider
               value={rotation}
               onChange={(event, newRotation) => setRotation(newRotation)}
@@ -190,7 +191,7 @@ const CropDialog = ({ image, onChange, open, onClose }) => {
           variant="text"
           onClick={onClose}
         >
-          Close
+          {t('Close')}
         </Button>
         <Button
           color="primary"
@@ -213,13 +214,13 @@ const CropDialog = ({ image, onChange, open, onClose }) => {
             loading
               ? (
                 <Box display="inline-flex">
-                  Loading
+                  {t('Loading')}
                   <Box display="flex" justifyContent="center" alignItems="center" ml={1}>
                     <CircularProgress size={16}/>
                   </Box>
                 </Box>
               )
-              : 'Confirm'
+              : t('Confirm')
           }
         </Button>
       </Box>
@@ -252,4 +253,4 @@ const CropDialog = ({ image, onChange, open, onClose }) => {
   )
 }
 
-export default CropDialog
+export default withTranslation('common')(CropDialog)

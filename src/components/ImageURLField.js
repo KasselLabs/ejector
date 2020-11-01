@@ -2,6 +2,7 @@ import React from 'react'
 import { TextField, CircularProgress } from '@material-ui/core'
 import { debounce } from 'lodash'
 
+import { withTranslation } from '../../i18n'
 import CropDialog from './CropDialog'
 import getImage from '../util/getImage'
 import createImageObject from '../util/createImageObject'
@@ -30,15 +31,11 @@ const debouncedOnImageURLChange = debounce(async (
   }
 }, 300)
 
-export default function ImageURLField ({ value, onChange }) {
+function ImageURLField ({ t, value, onChange }) {
   const [inputValue, setInputValue] = React.useState('')
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState('')
   const [imageToCrop, setImageToCrop] = React.useState(null)
-
-  React.useEffect(() => {
-
-  })
 
   return (
     <>
@@ -46,8 +43,8 @@ export default function ImageURLField ({ value, onChange }) {
         <TextField
           error={Boolean(error)}
           helperText={error}
-          label="Image URL"
-          placeholder="Or Paste a Image URL here"
+          label={t('Image URL')}
+          placeholder={t('Or Paste a Image URL here')}
           variant="outlined"
           fullWidth
           value={inputValue}
@@ -97,3 +94,5 @@ export default function ImageURLField ({ value, onChange }) {
     </>
   )
 }
+
+export default withTranslation('common')(ImageURLField)
