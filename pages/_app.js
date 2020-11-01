@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import Head from 'next/head'
 import { ThemeProvider } from '@material-ui/core/styles'
+import { ToastContainer } from 'react-toastify'
 import CssBaseline from '@material-ui/core/CssBaseline'
 import { appWithTranslation } from '../i18n'
 import theme from '../src/theme'
@@ -29,6 +30,17 @@ function MyApp (props) {
         {/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
         <CssBaseline />
         <Component {...pageProps} />
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+        />
       </ThemeProvider>
     </React.Fragment>
   )

@@ -10,6 +10,7 @@ import UploadArea from '../src/components/UploadArea'
 import ImageURLField from '../src/components/ImageURLField'
 import SoundControl from '../src/components/SoundControl'
 import ProductHuntButton from '../src/components/ProductHuntButton'
+import SubscribeForm from '../src/components/SubscribeForm'
 
 function Index ({ t }) {
   const [image, setImage] = useState('/among-us-red-character-color-reduced.png')
@@ -43,6 +44,7 @@ function Index ({ t }) {
         <meta name="twitter:image" content="https://ejector.kassellabs.io/twitter-card.png"/>
       </Head>
       <div className="preview-container">
+        <SubscribeForm/>
         <Box
           className="preview-form"
           display="flex"
