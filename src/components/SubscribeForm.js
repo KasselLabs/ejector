@@ -67,7 +67,8 @@ function SubscribeForm ({ t }) {
           method: 'POST',
           url: 'https://sheet.best/api/sheets/2fb54828-0d8f-404c-8ab5-d3496126f9a7',
           data: {
-            email
+            email,
+            language: navigator.language
           }
         })
         setLoading(false)
