@@ -17,6 +17,8 @@ function MapImageBase ({ t, src, href = '', available }) {
         justify-content: center;
         margin-bottom: 8px;
         position: relative;
+        min-width: 175px;
+        margin: 8px;
         cursor: ${available ? 'pointer' : 'unset'};
 
         > .image {
@@ -33,6 +35,7 @@ function MapImageBase ({ t, src, href = '', available }) {
           display: flex;
           justify-content: center;
           align-items: center;
+          white-space: nowrap;
         }
       }
     `}</style>
