@@ -78,7 +78,7 @@ const CropDialog = ({ t, image, onChange, open, onClose }) => {
             onRotationChange={setRotation}
             aspect={1}
             restrictPosition={false}
-            onCropComplete={(_, newCropArea) => setCropArea(newCropArea)}
+            onCropAreaChange={(_, newCropArea) => setCropArea(newCropArea)}
             cropSize={CROP_SIZE}
             onMediaLoaded={(loadedMediaSize) => {
               setMediaSize(loadedMediaSize)
