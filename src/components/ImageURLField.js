@@ -15,6 +15,7 @@ const validateImage = async (url) => {
 }
 
 const debouncedOnImageURLChange = debounce(async (
+  t,
   imageURL,
   setLoading,
   setImageToCrop,
@@ -25,7 +26,7 @@ const debouncedOnImageURLChange = debounce(async (
     await validateImage(imageURL)
     setImageToCrop(imageURL)
   } catch (error) {
-    setError('Invalid URL')
+    setError(t('Invalid URL'))
   } finally {
     setLoading(false)
   }
@@ -58,6 +59,7 @@ function ImageURLField ({ t, value, onChange }) {
             }
 
             debouncedOnImageURLChange(
+              t,
               imageURL,
               setLoading,
               setImageToCrop,
