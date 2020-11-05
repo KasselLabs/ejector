@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Button } from '@material-ui/core'
 
-const SoundControl = () => {
+import { withTranslation } from '../../i18n'
+
+const SoundControl = ({ t }) => {
   const [audioOn, setAudioOn] = useState(false)
   const ambianceAudio = useRef(null)
   const ejectedAudio = useRef(null)
@@ -33,11 +35,11 @@ const SoundControl = () => {
       <audio src="/ambiance.mp3" ref={ambianceAudio} loop/>
       <audio src="/ejected.mp3" ref={ejectedAudio} />
       <Button onClick={onClickButton}>
-        <h3 style={{ paddingRight: '5px' }}>Sound</h3>
+        <h3 style={{ paddingRight: '5px' }}>{t('Sound')}</h3>
         <img src={audioImage} height="24"/>
       </Button>
     </div>
   )
 }
 
-export default SoundControl
+export default withTranslation('common')(SoundControl)
