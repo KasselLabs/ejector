@@ -11,6 +11,7 @@ import ImageURLField from '../src/components/ImageURLField'
 import SoundControl from '../src/components/SoundControl'
 import ProductHuntButton from '../src/components/ProductHuntButton'
 import SubscribeForm from '../src/components/SubscribeForm'
+import DonateMention from '../src/components/DonateMention'
 
 function Index ({ t }) {
   const [image, setImage] = useState('/among-us-red-character-color-reduced.png')
@@ -44,6 +45,7 @@ function Index ({ t }) {
         <meta name="twitter:image" content="https://ejector.kassellabs.io/twitter-card.png"/>
       </Head>
       <div className="preview-container">
+        <DonateMention/>
         <SubscribeForm/>
         <Box
           className="preview-form"
@@ -190,7 +192,7 @@ function Index ({ t }) {
 }
 
 Index.getInitialProps = () => ({
-  namespacesRequired: 'common'
+  namespacesRequired: ['common']
 })
 
 export default withTranslation('common')(Index)
