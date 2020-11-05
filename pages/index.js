@@ -6,6 +6,7 @@ import { withTranslation } from '../i18n'
 import CanvasAnimator from '../src/util/CanvasAnimator'
 import CharacterGenerator from '../src/components/CharacterGenerator'
 import DownloadGIFButton from '../src/components/DownloadGIFButton'
+import DownloadMP4Button from '../src/components/DownloadMP4Button'
 import UploadArea from '../src/components/UploadArea'
 import ImageURLField from '../src/components/ImageURLField'
 import SoundControl from '../src/components/SoundControl'
@@ -111,6 +112,11 @@ function Index ({ t }) {
           </Box>
           <Box pt={1} width="100%">
             <DownloadGIFButton
+              ejectedText={ejectedText}
+              impostorText={impostorText}
+              image={image}
+            />
+            <DownloadMP4Button
               ejectedText={ejectedText}
               impostorText={impostorText}
               image={image}
