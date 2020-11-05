@@ -178,7 +178,7 @@ function SubscribeForm ({ t }) {
             width: 320px;
           }
 
-          @media (max-width: 320px) {
+          @media (max-width: 380px) {
             width: 100%;
           }
         }
