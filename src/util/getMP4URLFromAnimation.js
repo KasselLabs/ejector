@@ -16,7 +16,7 @@ export async function URLToFile (url, fileName) {
 export default async function getGIFURLFromAnimation (ejectedText, impostorText, characterImageURL) {
   const FRAME_DELAY = MP4_ANIMATION_FPS / 1000
   const characterImage = await getImage(characterImageURL)
-  const backgroundSound = await URLToFile('/background.mp3')
+  const backgroundSound = await URLToFile('/background.m4a')
 
   const canvas = document.createElement('canvas')
   canvas.width = 1920 / 4
