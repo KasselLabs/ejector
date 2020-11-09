@@ -9,6 +9,7 @@ import {
   ANIMATION_SPEEDUP,
   GIF_ANIMATION_FRAME_TIME_DELAY
 } from '../constants/animation'
+import track from '../track'
 
 const blobToFile = (blob, filename) => {
   // A Blob() is almost a File() - it's just missing the two properties below which we will add
@@ -27,6 +28,11 @@ const getImageElementFromURL = async (url) => {
 }
 
 export default async function getGIFURLFromAnimation (ejectedText, impostorText, characterImageURL) {
+  track('event', 'download_button_initialize', {
+    event_label: 'gif',
+    event_category: 'download'
+  })
+
   const characterImage = await getImage(characterImageURL)
 
   const canvas = document.createElement('canvas')
@@ -54,6 +60,10 @@ export default async function getGIFURLFromAnimation (ejectedText, impostorText,
       const blobURL = URL.createObjectURL(blob)
       resolve(blobURL)
       uploadFileToSpaces(ejectedText, 'gif', blobToFile(blob, 'ejection.gif'))
+      track('event', 'download_button_finish', {
+        event_label: 'gif',
+        event_category: 'download'
+      })
     })
 
     gif.on('progress', (percentage) => {
