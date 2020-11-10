@@ -1,5 +1,7 @@
 import React from 'react'
 
+import track from '../track'
+
 export default function ProductHuntButton () {
   return (
     <a
@@ -7,6 +9,9 @@ export default function ProductHuntButton () {
       href="https://www.producthunt.com/posts/among-us-ejector?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-among-us-ejector"
       target="_blank"
       rel="noopener noreferrer"
+      onClick={() => {
+        track('event', 'product_hunt_click')
+      }}
     >
       <img
         src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=272195&theme=dark"
