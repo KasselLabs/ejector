@@ -22,6 +22,7 @@ import { withTranslation } from '../../i18n'
 import useWindowSize from '../hooks/useWindowSize'
 import getCroppedImage from '../util/getCroppedImage'
 import getResizedImage from '../util/getResizedImage'
+import track from '../track'
 
 const DEFAULT_CROP = {
   x: 0,
@@ -45,6 +46,12 @@ const CropDialog = ({ t, image, onChange, open, onClose }) => {
   const [rotation, setRotation] = React.useState(0)
   const [loading, setLoading] = React.useState(false)
   const { isDesktop } = useWindowSize()
+
+  React.useEffect(() => {
+    if (open) {
+      track('event', 'crop_image_modal_open')
+    }
+  }, [open])
 
   return (
     <Dialog
@@ -208,6 +215,7 @@ const CropDialog = ({ t, image, onChange, open, onClose }) => {
             onChange(resizedImage)
             onClose()
             setLoading(false)
+            track('event', 'crop_image_completed')
           }}
         >
           {
