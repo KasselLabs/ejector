@@ -12,16 +12,27 @@ import SoundControl from '../src/components/SoundControl'
 import ProductHuntButton from '../src/components/ProductHuntButton'
 import SubscribeForm from '../src/components/SubscribeForm'
 import DonateMention from '../src/components/DonateMention'
+import track from '../src/track'
 
 function Index ({ t }) {
+  const DEFAULT_EJECTED_TEXT = t('Red was not The Impostor')
+  const DEFAULT_IMPOSTOR_TEXT = t('1 Impostor remains')
+
   const [image, setImage] = useState('/among-us-red-character-color-reduced.png')
-  const [ejectedText, setEjectedText] = useState(t('Red was not The Impostor'))
-  const [impostorText, setImpostorText] = useState(t('1 Impostor remains'))
+  const [ejectedText, setEjectedText] = useState(DEFAULT_EJECTED_TEXT)
+  const [impostorText, setImpostorText] = useState(DEFAULT_IMPOSTOR_TEXT)
 
   useEffect(() => {
     const canvas = document.getElementById('preview-canvas')
     const animator = new CanvasAnimator(canvas, ejectedText, impostorText, image)
     animator.play()
+
+    if (
+      ejectedText !== DEFAULT_EJECTED_TEXT ||
+      impostorText !== DEFAULT_IMPOSTOR_TEXT
+    ) {
+      track('event', 'ejection_form_text_changed')
+    }
 
     return () => {
       animator.stop()

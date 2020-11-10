@@ -84,7 +84,7 @@ function SubscribeForm ({ t }) {
           pauseOnHover: true,
           draggable: true
         })
-        track('event', 'subscribe', {
+        track('event', 'subscribe_submit', {
           event_category: 'email'
         })
         track('config', 'GA_MEASUREMENT_ID', {
@@ -118,7 +118,7 @@ function SubscribeForm ({ t }) {
               type="email"
               onChange={(e) => {
                 setEmail(e.target.value)
-                track('event', 'fill_text', {
+                track('event', 'subscribe_fill_text', {
                   event_category: 'email'
                 })
               }}
