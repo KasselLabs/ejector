@@ -87,9 +87,6 @@ function SubscribeForm ({ t }) {
         track('event', 'subscribe_submit', {
           event_category: 'email'
         })
-        track('config', 'GA_MEASUREMENT_ID', {
-          user_id: email
-        })
       }}
     >
       <div className="form-items-container">
