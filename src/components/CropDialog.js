@@ -20,8 +20,8 @@ import Cropper from 'react-easy-crop'
 
 import { withTranslation } from '../../i18n'
 import useWindowSize from '../hooks/useWindowSize'
-import getCroppedImage from '../util/getCroppedImage'
-import getResizedImage from '../util/getResizedImage'
+import getCroppedImages from '../util/getCroppedImages'
+import getResizedImages from '../util/getResizedImages'
 import track from '../track'
 
 const DEFAULT_CROP = {
@@ -207,12 +207,12 @@ const CropDialog = ({ t, image, onChange, open, onClose }) => {
           disabled={loading}
           onClick={async () => {
             setLoading(true)
-            const croppedImage = await getCroppedImage(image, cropArea, rotation)
-            const resizedImage = await getResizedImage(
-              croppedImage,
+            const croppedImages = await getCroppedImages(image, cropArea, rotation)
+            const resizedImages = await getResizedImages(
+              croppedImages,
               { maxWidth: 240, maxHeight: 240, backgroundColor: 'rgba(0, 0, 0, 0)' }
             )
-            onChange(resizedImage)
+            onChange(resizedImages)
             onClose()
             setLoading(false)
             track('event', 'crop_image_completed')

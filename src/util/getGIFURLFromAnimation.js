@@ -1,7 +1,7 @@
 import GIF from 'gif.js'
 import events, { GIF_GENERATION_LOADING_STEP } from '../events'
 
-import getImage from './getImage'
+import getCharacterImages from './getCharacterImages'
 import drawAnimation from './drawAnimation'
 import uploadFileToSpaces from './uploadFileToSpaces'
 import {
@@ -27,13 +27,13 @@ const getImageElementFromURL = async (url) => {
   })
 }
 
-export default async function getGIFURLFromAnimation (ejectedText, impostorText, characterImageURL) {
+export default async function getGIFURLFromAnimation (ejectedText, impostorText, characterImageURLs) {
   track('event', 'download_button_initialize', {
     event_label: 'gif',
     event_category: 'download'
   })
 
-  const characterImage = await getImage(characterImageURL)
+  const characterImages = await getCharacterImages(characterImageURLs)
 
   const canvas = document.createElement('canvas')
   canvas.width = 1920 / 4
@@ -47,7 +47,7 @@ export default async function getGIFURLFromAnimation (ejectedText, impostorText,
   for (let elapsed = 0; elapsed <= ANIMATION_SECONDS; elapsed += (GIF_ANIMATION_FRAME_TIME_DELAY)) {
     const renderingPercentage = elapsed / ANIMATION_SECONDS
     events.emit(GIF_GENERATION_LOADING_STEP, renderingPercentage / 2)
-    await drawAnimation(canvas, ejectedText, impostorText, characterImage, elapsed)
+    await drawAnimation(canvas, ejectedText, impostorText, characterImages, elapsed)
 
     const imageURL = canvas.toDataURL('image/png')
     const image = await getImageElementFromURL(imageURL)

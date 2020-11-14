@@ -31,7 +31,7 @@ const CustomLinearProgress = withStyles((theme) => ({
   }
 }))(LinearProgress)
 
-function DownloadGIFButton ({ t, ejectedText, impostorText, image }) {
+function DownloadGIFButton ({ t, ejectedText, impostorText, characterImages }) {
   const [loading, setLoading] = useState(false)
   const [loadingPercentage, setLoadingPercentage] = useState(0)
 
@@ -65,7 +65,7 @@ function DownloadGIFButton ({ t, ejectedText, impostorText, image }) {
 
             setLoading(true)
             inprogressAudio.current.play()
-            const gifURL = await getGIFURLFromAnimation(ejectedText, impostorText, image)
+            const gifURL = await getGIFURLFromAnimation(ejectedText, impostorText, characterImages)
             downloadURL(gifURL, ejectedText.replace(/\s|\n/g, '-'))
             window.URL.revokeObjectURL(gifURL)
             setLoading(false)

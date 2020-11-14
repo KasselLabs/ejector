@@ -1,16 +1,16 @@
 import Timer from './Timer'
 import getBackgroundFrames from './getBackgroundFrames'
 import drawAnimation from './drawAnimation'
-import getImage from './getImage'
+import getCharacterImages from './getCharacterImages'
 import { ANIMATION_SECONDS, ANIMATION_FRAME_TIME, ANIMATION_SPEEDUP } from '../constants/animation'
 
 export default class CanvasAnimator {
-  constructor (canvas, ejectedText, impostorText, characterImageURL) {
+  constructor (canvas, ejectedText, impostorText, characterImageURLs) {
     this.canvas = canvas
     this.ejectedText = ejectedText
     this.impostorText = impostorText
     this.stopped = false
-    this.characterImageURL = characterImageURL
+    this.characterImageURLs = characterImageURLs
   }
 
   playAudio () {
@@ -22,7 +22,7 @@ export default class CanvasAnimator {
 
   async play () {
     this.playAudio()
-    const characterImage = await getImage(this.characterImageURL)
+    const characterImages = await getCharacterImages(this.characterImageURLs)
 
     const timer = new Timer()
 
@@ -43,7 +43,7 @@ export default class CanvasAnimator {
 
       const elapsed = getElapsedSeconds()
       window.elapsedAnimationTime = elapsed
-      await drawAnimation(this.canvas, this.ejectedText, this.impostorText, characterImage, elapsed)
+      await drawAnimation(this.canvas, this.ejectedText, this.impostorText, characterImages, elapsed)
 
       const elapsedDiff = timer.elapsedDiff() / 1000
       const nextFrameDelay = Math.max(ANIMATION_FRAME_TIME - elapsedDiff, 0)
