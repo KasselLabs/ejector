@@ -14,7 +14,7 @@ const downloadURL = (url, filename) => {
   aElement.remove()
 }
 
-const useDownloadGif = ({ inprogressAudio, completeAudio, ejectedText, impostorText, image }) => {
+const useDownloadGif = ({ inprogressAudio, completeAudio, ejectedText, impostorText, characterImages }) => {
   const [loading, setLoading] = useState(false)
   const [loadingPercentage, setLoadingPercentage] = useState(0)
 
@@ -36,13 +36,13 @@ const useDownloadGif = ({ inprogressAudio, completeAudio, ejectedText, impostorT
 
     setLoading(true)
     inprogressAudio.current.play()
-    const gifURL = await getGIFURLFromAnimation(ejectedText, impostorText, image)
+    const gifURL = await getGIFURLFromAnimation(ejectedText, impostorText, characterImages)
     downloadURL(gifURL, ejectedText.replace(/\s|\n/g, '-'))
     window.URL.revokeObjectURL(gifURL)
     setLoading(false)
     setLoadingPercentage(0)
     completeAudio.current.play()
-  }, [inprogressAudio, completeAudio, ejectedText, impostorText, image])
+  }, [inprogressAudio, completeAudio, ejectedText, impostorText, characterImages])
 
   return {
     loading,

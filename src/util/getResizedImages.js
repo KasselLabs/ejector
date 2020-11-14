@@ -1,9 +1,29 @@
-import createImageObject from './createImageObject'
+import getCORSImage from './getCORSImage'
 
-export default async function getResizedImage (imageSrc, { maxWidth, maxHeight, backgroundColor }) {
+async function getResizedGIF (images, options) {
+  const resizedFramesPromises = images.frames.map(async frame => {
+    const resizedImage = await getResizedImages(frame.imageURL, options)
+    return {
+      ...frame,
+      imageURL: resizedImage
+    }
+  })
+
+  const resizedFrames = await Promise.all(resizedFramesPromises)
+  return {
+    ...images,
+    frames: resizedFrames
+  }
+}
+
+export default async function getResizedImages (imageSrc, { maxWidth, maxHeight, backgroundColor }) {
+  if (Array.isArray(imageSrc.frames)) {
+    return getResizedGIF(imageSrc, { maxWidth, maxHeight, backgroundColor })
+  }
+
   let image
   try {
-    image = await createImageObject(imageSrc)
+    image = await getCORSImage(imageSrc)
   } catch (error) {
     console.error(error)
     return null

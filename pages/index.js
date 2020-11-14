@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { Box, TextField } from '@material-ui/core'
 import Head from 'next/head'
 
@@ -12,21 +12,39 @@ import SoundControl from '../src/components/SoundControl'
 import ProductHuntButton from '../src/components/ProductHuntButton'
 import SubscribeForm from '../src/components/SubscribeForm'
 import DonateMention from '../src/components/DonateMention'
+import track from '../src/track'
 
 function Index ({ t }) {
-  const [image, setImage] = useState('/among-us-red-character-color-reduced.png')
-  const [ejectedText, setEjectedText] = useState(t('Red was not The Impostor'))
-  const [impostorText, setImpostorText] = useState(t('1 Impostor remains'))
+  const DEFAULT_EJECTED_TEXT = t('Red was not The Impostor')
+  const DEFAULT_IMPOSTOR_TEXT = t('1 Impostor remains')
+
+  const [characterImages, setCharacterImages] = useState('/among-us-red-character-color-reduced.png')
+  const image = useMemo(() => {
+    if (Array.isArray(characterImages?.frames)) {
+      return characterImages.frames[0].imageURL
+    }
+
+    return characterImages
+  }, [characterImages])
+  const [ejectedText, setEjectedText] = useState(DEFAULT_EJECTED_TEXT)
+  const [impostorText, setImpostorText] = useState(DEFAULT_IMPOSTOR_TEXT)
 
   useEffect(() => {
     const canvas = document.getElementById('preview-canvas')
-    const animator = new CanvasAnimator(canvas, ejectedText, impostorText, image)
+    const animator = new CanvasAnimator(canvas, ejectedText, impostorText, characterImages)
     animator.play()
+
+    if (
+      ejectedText !== DEFAULT_EJECTED_TEXT ||
+      impostorText !== DEFAULT_IMPOSTOR_TEXT
+    ) {
+      track('event', 'ejection_form_text_changed')
+    }
 
     return () => {
       animator.stop()
     }
-  }, [ejectedText, impostorText, image])
+  }, [ejectedText, impostorText, characterImages])
 
   return (
     <div className="page">
@@ -75,13 +93,13 @@ function Index ({ t }) {
           </Box>
           <Box width="100%" pb={2} pt={1}>
             <CharacterGenerator
-              onChange={setImage}
+              onChange={setCharacterImages}
             />
           </Box>
           <Box display="flex" width="100%" pb={2}>
             <UploadArea
               value={image}
-              onChange={setImage}
+              onChange={setCharacterImages}
             />
             <Box display="flex" flexDirection="column" width="100%" >
               <TextField
@@ -106,13 +124,13 @@ function Index ({ t }) {
           <Box width="100%">
             <ImageURLField
               value={image}
-              onChange={setImage}
+              onChange={setCharacterImages}
             />
           </Box>
           <DownloadButtons
             ejectedText={ejectedText}
             impostorText={impostorText}
-            image={image}
+            characterImages={characterImages}
           />
         </Box>
         <canvas id="preview-canvas" className="ejection-preview" width="1920" height="1080"/>

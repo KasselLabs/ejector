@@ -2,9 +2,10 @@ import React from 'react'
 import Link from 'next/link'
 import axios from 'axios'
 import { toast } from 'react-toastify'
+import { Box, Button, TextField, CircularProgress } from '@material-ui/core'
 
 import { withTranslation } from '../../i18n'
-import { Box, Button, TextField, CircularProgress } from '@material-ui/core'
+import track from '../track'
 
 function MapImageBase ({ t, src, href = '', available }) {
   const content = (
@@ -83,6 +84,9 @@ function SubscribeForm ({ t }) {
           pauseOnHover: true,
           draggable: true
         })
+        track('event', 'subscribe_submit', {
+          event_category: 'email'
+        })
       }}
     >
       <div className="form-items-container">
@@ -109,7 +113,12 @@ function SubscribeForm ({ t }) {
               rows={1}
               value={email}
               type="email"
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value)
+                track('event', 'subscribe_fill_text', {
+                  event_category: 'email'
+                })
+              }}
               InputLabelProps={{ shrink: true }}
               required
             />

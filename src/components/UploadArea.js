@@ -23,7 +23,7 @@ function UploadArea ({ t, label, sublabel, value, onChange }) {
           type="file"
           ref={fileInputRef}
           hidden
-          accept=".jpg,.jpeg,.png"
+          accept="image/*"
           onChange={async (e) => {
             const file = e.target.files[0]
             if (!file) {

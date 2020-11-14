@@ -1,6 +1,6 @@
 import events, { MP4_GENERATION_LOADING_STEP } from '../events'
 
-import getImage from './getImage'
+import getCharacterImages from './getCharacterImages'
 import drawAnimation from './drawAnimation'
 import uploadFileToSpaces from './uploadFileToSpaces'
 import {
@@ -13,9 +13,9 @@ export async function URLToFile (url, fileName) {
   return result.arrayBuffer()
 }
 
-export default async function getGIFURLFromAnimation (ejectedText, impostorText, characterImageURL) {
+export default async function getGIFURLFromAnimation (ejectedText, impostorText, characterImageURLs) {
   const FRAME_DELAY = MP4_ANIMATION_FPS / 1000
-  const characterImage = await getImage(characterImageURL)
+  const characterImages = await getCharacterImages(characterImageURLs)
   const backgroundSound = await URLToFile('/background.m4a')
 
   const canvas = document.createElement('canvas')
@@ -28,7 +28,7 @@ export default async function getGIFURLFromAnimation (ejectedText, impostorText,
     const renderingPercentage = elapsed / ANIMATION_SECONDS
     events.emit(MP4_GENERATION_LOADING_STEP, renderingPercentage / 2)
 
-    await drawAnimation(canvas, ejectedText, impostorText, characterImage, elapsed)
+    await drawAnimation(canvas, ejectedText, impostorText, characterImages, elapsed)
 
     const imageURL = canvas.toDataURL('image/png')
     const imageFile = await URLToFile(imageURL)

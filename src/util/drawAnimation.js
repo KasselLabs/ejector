@@ -23,13 +23,26 @@ async function drawBackgroundVideo (canvas, elapsed = 0) {
   )
 }
 
-function drawCharacter (canvas, context, characterImage, elapsed) {
+function getCharacterImageForTime (characterImages, elapsed) {
+  const limitedElapsed = Math.round(elapsed * 1000) % Math.round(characterImages.duration * 1000) / 1000
+  const foundFrame = characterImages.frames.find(frame => {
+    return (
+      limitedElapsed >= frame.start &&
+      limitedElapsed <= frame.end
+    )
+  })
+
+  return foundFrame.image
+}
+
+function drawCharacter (canvas, context, characterImages, elapsed) {
   const SPEED_X = 0.28
   const ROTATION_SPEED = 1.3
 
   const positionY = (canvas.height / 2)
   const positionX = canvas.width * (SPEED_X * elapsed)
 
+  const characterImage = getCharacterImageForTime(characterImages, elapsed)
   const aspectRatio = characterImage.width / characterImage.height
   const height = canvas.height / 4.46
   const width = height * aspectRatio
@@ -141,7 +154,7 @@ function drawWatermark (canvas, context) {
   )
 }
 
-const drawAnimation = async (canvas, ejectedText, impostorText, characterImage, elapsed) => {
+const drawAnimation = async (canvas, ejectedText, impostorText, characterImages, elapsed) => {
   const { width, height } = canvas
   const context = canvas.getContext('2d')
   context.clearRect(0, 0, width, height)
@@ -149,7 +162,7 @@ const drawAnimation = async (canvas, ejectedText, impostorText, characterImage, 
 
   drawEjectedText(canvas, context, ejectedText, elapsed)
   drawImpostorText(canvas, context, impostorText, elapsed)
-  drawCharacter(canvas, context, characterImage, elapsed)
+  drawCharacter(canvas, context, characterImages, elapsed)
   drawWatermark(canvas, context)
 }
 

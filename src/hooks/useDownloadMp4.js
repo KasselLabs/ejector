@@ -14,7 +14,7 @@ const downloadURL = (url, filename) => {
   aElement.remove()
 }
 
-const useDownloadMp4 = ({ inprogressAudio, completeAudio, ejectedText, impostorText, image }) => {
+const useDownloadMp4 = ({ inprogressAudio, completeAudio, ejectedText, impostorText, characterImages }) => {
   const [loading, setLoading] = useState(false)
   const [loadingPercentage, setLoadingPercentage] = useState(0)
 
@@ -36,13 +36,13 @@ const useDownloadMp4 = ({ inprogressAudio, completeAudio, ejectedText, impostorT
 
     setLoading(true)
     inprogressAudio.current.play()
-    const mp4URL = await getMP4URLFromAnimation(ejectedText, impostorText, image)
+    const mp4URL = await getMP4URLFromAnimation(ejectedText, impostorText, characterImages)
     downloadURL(mp4URL, ejectedText.replace(/\s|\n/g, '-'))
     window.URL.revokeObjectURL(mp4URL)
     setLoading(false)
     setLoadingPercentage(0)
     completeAudio.current.play()
-  }, [inprogressAudio, completeAudio, ejectedText, impostorText, image])
+  }, [inprogressAudio, completeAudio, ejectedText, impostorText, characterImages])
 
   return {
     loading,

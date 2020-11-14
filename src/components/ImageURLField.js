@@ -5,13 +5,13 @@ import { debounce } from 'lodash'
 import { withTranslation } from '../../i18n'
 import CropDialog from './CropDialog'
 import getImage from '../util/getImage'
-import createImageObject from '../util/createImageObject'
+import getCORSImage from '../util/getCORSImage'
 
 const validateImage = async (url) => {
   // Check if URL is Valid
   await getImage(url)
   // Check if URL can be manipulated on canvas
-  await createImageObject(url)
+  await getCORSImage(url)
 }
 
 const debouncedOnImageURLChange = debounce(async (

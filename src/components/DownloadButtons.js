@@ -23,7 +23,7 @@ const CustomLinearProgress = withStyles((theme) => ({
   }
 }))(LinearProgress)
 
-const DownloadButtons = ({ t, ejectedText, impostorText, image }) => {
+const DownloadButtons = ({ t, ejectedText, impostorText, characterImages }) => {
   const inprogressAudio = useRef(null)
   const completeAudio = useRef(null)
   const inprogressAudioMp4 = useRef(null)
@@ -33,13 +33,13 @@ const DownloadButtons = ({ t, ejectedText, impostorText, image }) => {
     loading: loadingGif,
     loadingPercentage: loadingGifPercentage,
     generateGif
-  } = useDownloadGif({ inprogressAudio, completeAudio, ejectedText, impostorText, image })
+  } = useDownloadGif({ inprogressAudio, completeAudio, ejectedText, impostorText, characterImages })
 
   const {
     loading: loadingMp4,
     loadingPercentage: loadingMp4Percentage,
     generateMp4
-  } = useDownloadMp4({ inprogressAudio: inprogressAudioMp4, completeAudio: completeAudioMp4, ejectedText, impostorText, image })
+  } = useDownloadMp4({ inprogressAudio: inprogressAudioMp4, completeAudio: completeAudioMp4, ejectedText, impostorText, characterImages })
 
   return (
     <Box pt={1} width="100%" align="center" >

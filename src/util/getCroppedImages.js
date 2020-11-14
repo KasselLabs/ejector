@@ -1,22 +1,64 @@
-import createImageObject from './createImageObject'
+import getCORSImage from './getCORSImage'
+import getCORSURL from './getCORSURL'
+import gifFrames from 'gif-frames'
 
 function getRadianAngle (degreeValue) {
   return (degreeValue * Math.PI) / 180
 }
 
+async function getCroppedGIF (gifSrc, cropArea, rotation) {
+  const frames = await gifFrames({
+    url: getCORSURL(gifSrc),
+    frames: 'all',
+    outputType: 'canvas'
+  })
+
+  const croppedFrames = []
+  let frameTime = 0
+  for (const frame of frames) {
+    const { frameInfo, getImage } = frame
+    const delay = frameInfo.delay || 10
+    const rawImageURL = getImage().toDataURL('image/png')
+    const croppedImageURL = await getCroppedImages(
+      rawImageURL,
+      cropArea,
+      rotation
+    )
+
+    croppedFrames.push({
+      start: frameTime / 1000,
+      end: (frameTime + (delay * 10)) / 1000,
+      imageURL: croppedImageURL
+    })
+
+    frameTime += delay * 10
+  }
+
+  return {
+    duration: frameTime / 1000,
+    frames: croppedFrames
+  }
+}
+
 /**
  * This function was adapted from the one in the ReadMe of https://github.com/DominicTobias/react-image-crop
- * @param {File} image - Image File url
+ * @param {File} image - Image File url or array of images
  * @param {Object} cropArea - cropArea Object provided by react-easy-crop
  * @param {number} rotation - optional rotation parameter
  */
-export default async function getCroppedImage (imageSrc, cropArea, rotation = 0) {
+export default async function getCroppedImages (imageSrc, cropArea, rotation = 0) {
+  const isGIFImage = Boolean(imageSrc.match(/(^data:image\/gif)|(\.gif$)/))
+
   let image
   try {
-    image = await createImageObject(imageSrc)
+    image = await getCORSImage(imageSrc)
   } catch (error) {
     console.error(error)
     return null
+  }
+
+  if (isGIFImage) {
+    return getCroppedGIF(imageSrc, cropArea, rotation)
   }
 
   const canvas = document.createElement('canvas')
