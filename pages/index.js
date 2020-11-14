@@ -5,7 +5,7 @@ import Head from 'next/head'
 import { withTranslation } from '../i18n'
 import CanvasAnimator from '../src/util/CanvasAnimator'
 import CharacterGenerator from '../src/components/CharacterGenerator'
-import DownloadButtons from '../src/components/DownloadButtons'
+import DownloadButton from '../src/components/DownloadButton'
 import UploadArea from '../src/components/UploadArea'
 import ImageURLField from '../src/components/ImageURLField'
 import SoundControl from '../src/components/SoundControl'
@@ -127,7 +127,7 @@ function Index ({ t }) {
               onChange={setCharacterImages}
             />
           </Box>
-          <DownloadButtons
+          <DownloadButton
             ejectedText={ejectedText}
             impostorText={impostorText}
             characterImages={characterImages}

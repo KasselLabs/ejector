@@ -6,6 +6,7 @@ import { ToastContainer } from 'react-toastify'
 import CssBaseline from '@material-ui/core/CssBaseline'
 import { appWithTranslation } from '../i18n'
 import theme from '../src/theme'
+import { PaymentContextProvider } from '../src/contexts/Payment'
 
 import '../styles/globals.scss'
 
@@ -29,7 +30,9 @@ function MyApp (props) {
       <ThemeProvider theme={theme}>
         {/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
         <CssBaseline />
-        <Component {...pageProps} />
+        <PaymentContextProvider>
+          <Component {...pageProps} />
+        </PaymentContextProvider>
         <ToastContainer
           position="top-right"
           autoClose={5000}
