@@ -1,13 +1,10 @@
-import React, { useRef } from 'react'
+import React, { useRef, useState } from 'react'
 import { withStyles } from '@material-ui/core/styles'
 import { Box, LinearProgress } from '@material-ui/core'
 
 import { withTranslation } from '../../i18n'
-import DownloadGIFButton from './DownloadGIFButton'
-import DownloadMP4Button from './DownloadMP4Button'
-
-import useDownloadGif from '../hooks/useDownloadGif'
-import useDownloadMp4 from '../hooks/useDownloadMp4'
+import DropdownMenu from './DropdownMenu'
+import useDownloadFile from '../hooks/useDownloadFile'
 
 const CustomLinearProgress = withStyles((theme) => ({
   root: {
@@ -26,49 +23,49 @@ const CustomLinearProgress = withStyles((theme) => ({
 const DownloadButtons = ({ t, ejectedText, impostorText, characterImages }) => {
   const inprogressAudio = useRef(null)
   const completeAudio = useRef(null)
-  const inprogressAudioMp4 = useRef(null)
-  const completeAudioMp4 = useRef(null)
+  const [downloadingType, setDownloadingType] = useState('')
 
   const {
-    loading: loadingGif,
-    loadingPercentage: loadingGifPercentage,
-    generateGif
-  } = useDownloadGif({ inprogressAudio, completeAudio, ejectedText, impostorText, characterImages })
-
-  const {
-    loading: loadingMp4,
-    loadingPercentage: loadingMp4Percentage,
-    generateMp4
-  } = useDownloadMp4({ inprogressAudio: inprogressAudioMp4, completeAudio: completeAudioMp4, ejectedText, impostorText, characterImages })
+    loading,
+    loadingPercentage,
+    generateFile
+  } = useDownloadFile({ inprogressAudio, completeAudio, ejectedText, impostorText, characterImages })
 
   return (
-    <Box pt={1} width="100%" align="center" >
+    <Box pt={2} width="100%" align="center">
       <audio src="/task_Inprogress.mp3" ref={inprogressAudio} />
       <audio src="/task_Complete.mp3" ref={completeAudio} />
-      <audio src="/task_Inprogress.mp3" ref={inprogressAudioMp4} />
-      <audio src="/task_Complete.mp3" ref={completeAudioMp4} />
-      <DownloadGIFButton
-        generateGif={generateGif}
-        loading={loadingGif}
-        loadingPercentage={loadingGifPercentage}
-        style={{ marginRight: '1em' }}
-      />
-      <DownloadMP4Button
-        generateMp4={generateMp4}
-        loading={loadingMp4}
-        loadingPercentage={loadingMp4Percentage}
-      />
-      {loadingGif &&
-        <div style={{ marginBottom: '1em' }}>
-          {t('Generating GIF')}
-          <CustomLinearProgress className="loading-progress" variant="determinate" value={loadingGifPercentage} />
-        </div>
-      }
-      {loadingMp4 &&
-        <div>
-          {t('Generating MP4 Video')}
-          <CustomLinearProgress className="loading-progress" variant="determinate" value={loadingMp4Percentage} />
-        </div>
+      <Box display="flex" justifyContent="center">
+        <DropdownMenu
+          text={t('Download')}
+          loading={loading}
+          loadingText={t('Generating') + ' ' + downloadingType + ` (${loadingPercentage}%)`}
+          items={[
+            {
+              children: t('Download GIF'),
+              onClick: () => {
+                setDownloadingType(t('GIF'))
+                generateFile('gif')
+              }
+            },
+            {
+              children: t('Download Video'),
+              onClick: () => {
+                setDownloadingType(t('Video'))
+                generateFile('mp4')
+              }
+            }
+          ]}
+        />
+      </Box>
+      {loading &&
+        <Box pt={1}>
+          <CustomLinearProgress
+            className="loading-progress"
+            variant="determinate"
+            value={loadingPercentage}
+          />
+        </Box>
       }
     </Box>
   )

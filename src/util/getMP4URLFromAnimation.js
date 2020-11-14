@@ -1,5 +1,6 @@
-import events, { MP4_GENERATION_LOADING_STEP } from '../events'
+import events, { FILE_GENERATION_LOADING_STEP } from '../events'
 
+import ffmpeg from './ffmpeg'
 import getCharacterImages from './getCharacterImages'
 import drawAnimation from './drawAnimation'
 import uploadFileToSpaces from './uploadFileToSpaces'
@@ -7,6 +8,13 @@ import {
   ANIMATION_SECONDS,
   MP4_ANIMATION_FPS
 } from '../constants/animation'
+
+const blobToFile = (blob, filename) => {
+  // A Blob() is almost a File() - it's just missing the two properties below which we will add
+  blob.lastModifiedDate = new Date()
+  blob.name = filename
+  return blob
+}
 
 export async function URLToFile (url, fileName) {
   const result = await fetch(url)
@@ -19,14 +27,14 @@ export default async function getGIFURLFromAnimation (ejectedText, impostorText,
   const backgroundSound = await URLToFile('/background.m4a')
 
   const canvas = document.createElement('canvas')
-  canvas.width = 1920 / 4
-  canvas.height = 1080 / 4
+  canvas.width = 1280
+  canvas.height = 720
 
   const images = []
 
   for (let elapsed = 0; elapsed <= ANIMATION_SECONDS; elapsed += FRAME_DELAY) {
     const renderingPercentage = elapsed / ANIMATION_SECONDS
-    events.emit(MP4_GENERATION_LOADING_STEP, renderingPercentage / 2)
+    events.emit(FILE_GENERATION_LOADING_STEP, renderingPercentage / 2)
 
     await drawAnimation(canvas, ejectedText, impostorText, characterImages, elapsed)
 
@@ -41,58 +49,44 @@ export default async function getGIFURLFromAnimation (ejectedText, impostorText,
   }))
 
   return new Promise((resolve, reject) => {
-    const worker = new window.Worker('/ffmpeg-worker-mp4.js')
-    worker.onmessage = function (e) {
-      const msg = e.data
-      switch (msg.type) {
-        case 'ready':
-          worker.postMessage({
-            type: 'run',
-            MEMFS: [
-              {
-                name: 'background.mp3',
-                data: backgroundSound
-              },
-              ...MEMFSImages
-            ],
-            arguments: [
-              '-i',
-              'background.mp3',
-              '-framerate',
-              '30',
-              '-i',
-              'image-%d.png',
-              '-c:a', 'copy',
-              '-c:v', 'libx264',
-              '-pix_fmt', 'yuv420p',
-              '-shortest',
-              'out.mp4'
-            ]
-          })
-          break
-        case 'stdout':
-          console.log('out', msg.data)
-          break
-        case 'stderr':
-          const frameMatch = msg.data.match(/frame= +([0-9]+)/)
-          console.log(frameMatch)
-          if (frameMatch) {
-            const frameNumber = parseInt(frameMatch[1], 10)
-            const frameTotal = images.length
-            const renderingPercentage = 0.5 + ((frameNumber / frameTotal) * 0.48)
-            console.log(renderingPercentage, frameTotal)
-            events.emit(MP4_GENERATION_LOADING_STEP, renderingPercentage)
-          }
-          break
-        case 'done':
-          const videoData = Uint8Array.from(msg.data.MEMFS[0].data)
-          const videoBlob = new Blob([videoData], { type: 'video/mp4' })
-          const videoURL = window.URL.createObjectURL(videoBlob)
-          events.emit(MP4_GENERATION_LOADING_STEP, 1)
-          console.log(videoURL)
-          resolve(videoURL)
-          break
+    ffmpeg({
+      MEMFS: [
+        {
+          name: 'background.m4a',
+          data: backgroundSound
+        },
+        ...MEMFSImages
+      ],
+      arguments: [
+        '-i',
+        'background.m4a',
+        '-framerate',
+        '30',
+        '-i',
+        'image-%d.png',
+        '-c:a', 'copy',
+        '-c:v', 'libx264',
+        '-pix_fmt', 'yuv420p',
+        '-shortest',
+        'out.mp4'
+      ],
+      onPrintErr: (data) => {
+        const frameMatch = data.match(/frame= +([0-9]+)/)
+        if (frameMatch) {
+          const frameNumber = parseInt(frameMatch[1], 10)
+          const frameTotal = images.length
+          const renderingPercentage = 0.5 + ((frameNumber / frameTotal) * 0.48)
+          events.emit(FILE_GENERATION_LOADING_STEP, renderingPercentage)
+        }
+      },
+      onDone: (data) => {
+        const videoData = Uint8Array.from(data.MEMFS[0].data)
+        const videoBlob = new Blob([videoData], { type: 'video/mp4' })
+        const videoURL = window.URL.createObjectURL(videoBlob)
+        events.emit(FILE_GENERATION_LOADING_STEP, 1)
+        resolve(videoURL)
+        uploadFileToSpaces(ejectedText, 'mp4', blobToFile(videoBlob, 'ejection.mp4'))
       }
-    }
+    })
   })
 }
