@@ -8,6 +8,7 @@ import {
   ANIMATION_SECONDS,
   MP4_ANIMATION_FPS
 } from '../constants/animation'
+import track from '../track'
 
 const blobToFile = (blob, filename) => {
   // A Blob() is almost a File() - it's just missing the two properties below which we will add
@@ -22,6 +23,11 @@ export async function URLToFile (url, fileName) {
 }
 
 export default async function getGIFURLFromAnimation (ejectedText, impostorText, characterImageURLs) {
+  track('event', 'download_mp4_button_initialize', {
+    event_label: 'mp4',
+    event_category: 'download'
+  })
+
   const FRAME_DELAY = MP4_ANIMATION_FPS / 1000
   const characterImages = await getCharacterImages(characterImageURLs)
   const backgroundSound = await URLToFile('/background.m4a')
@@ -86,6 +92,10 @@ export default async function getGIFURLFromAnimation (ejectedText, impostorText,
         events.emit(FILE_GENERATION_LOADING_STEP, 1)
         resolve(videoURL)
         uploadFileToSpaces(ejectedText, 'mp4', blobToFile(videoBlob, 'ejection.mp4'))
+        track('event', 'download_mp4_button_finish', {
+          event_label: 'mp4',
+          event_category: 'download'
+        })
       }
     })
   })

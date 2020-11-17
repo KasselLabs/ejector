@@ -7,10 +7,17 @@ import { withTranslation } from '../../i18n'
 import Dialog from './Dialog'
 import DropdownMenu from './DropdownMenu'
 import isFFMPEGWorking from '../util/isFFMPEGWorking'
+import track from '../track'
 import useDownloadFile from '../hooks/useDownloadFile'
 import { usePaymentContext } from '../contexts/Payment'
 
 const VideoDownloadNotSupportedDialogBase = ({ t, open, onClose }) => {
+  React.useEffect(() => {
+    if (open) {
+      track('event', 'modal_video_not_supported_open')
+    }
+  }, [open])
+
   return (
     <Dialog
       open={open}
@@ -56,6 +63,12 @@ const VideoDownloadDialogBase = ({ t, open, onClose, onFinish }) => {
     }
   }, [open, isPaidUser])
 
+  React.useEffect(() => {
+    if (open) {
+      track('event', 'modal_payment_open')
+    }
+  }, [open])
+
   return (
     <Dialog
       open={open}
@@ -91,6 +104,7 @@ const VideoDownloadDialogBase = ({ t, open, onClose, onFinish }) => {
             shippingPreference="NO_SHIPPING"
             onClick={() => {
               setLoading(true)
+              track('event', 'paypal_button_click')
             }}
             onCancel={() => {
               setLoading(false)
