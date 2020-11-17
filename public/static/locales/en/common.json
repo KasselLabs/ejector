@@ -1,4 +1,5 @@
 {
+  "2": "2",
   "Ejector - Eject Someone": "Ejector - Eject Someone",
   "Red was not The Impostor": "Red was not The Impostor",
   "1 Impostor remains": "1 Impostor remains",
@@ -27,7 +28,7 @@
   "Crop Image": "Crop Image",
   "Available Soon!": "Available Soon!",
   "Thanks! We'll notify you as soon as it is ready! 🚀": "Thanks! We'll notify you as soon as it is ready! 🚀",
-  "We plan to launch more features, like victory/defeat screen generators, video download and much more!": "We plan to launch more features, like victory/defeat screen generators, video download and much more!",
+  "We plan to launch more features, like victory/defeat screen generators and much more!": "We plan to launch more features, like victory/defeat screen generators and much more!",
   "Add your email below if you want to get notified as soon as we do it!": "Add your email below if you want to get notified as soon as we do it!",
   "Your Email": "Your Email",
   "Notify Me": "Notify Me",
@@ -40,5 +41,22 @@
   "Sound": "Sound",
   "Generating MP4 Video": "Generating MP4 Video",
   "Download MP4 Video": "Download MP4 Video",
-  "Donate with": "Donate with"
+  "Donate with": "Donate with",
+  "Download Video": "Download Video",
+  "You can download a HD Quality video with sound for a small fee of": "You can download a HD Quality video with sound for a small fee of",
+  "US$ 2": "US$ 2",
+  "After this payment, you'll be able export unlimited videos in this same device for 1 day": "After this payment, you'll be able export unlimited videos in this same device for 1 day",
+  "USD": "USD",
+  "Validating Payment": "Validating Payment",
+  "Have you paid from another device? Insert the your Paypal Order ID here so we can validate it for you": "Have you paid from another device? Insert the your Paypal Order ID here so we can validate it for you",
+  "Promo Code": "Promo Code",
+  "Paste your promo code here": "Paste your promo code here",
+  "Invalid Order Id": "Invalid Order Id",
+  "If you have any questions, please email us at": "If you have any questions, please email us at",
+  "Download": "Download",
+  "Generating": "Generating",
+  "GIF": "GIF",
+  "Video": "Video",
+  "Order ID": "Order ID",
+  "Paste your Order ID here": "Paste your Order ID here"
 }

@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react'
 import { withStyles } from '@material-ui/core/styles'
-import { Box, Button, TextField, CircularProgress, LinearProgress } from '@material-ui/core'
+import { Box, Button, TextField, CircularProgress, InputAdornment, LinearProgress } from '@material-ui/core'
+import { PayPalButton } from 'react-paypal-button-v2'
 
 import { withTranslation } from '../../i18n'
 import Dialog from './Dialog'
@@ -10,9 +11,10 @@ import { usePaymentContext } from '../contexts/Payment'
 
 const VideoDownloadDialogBase = ({ t, open, onClose, onFinish }) => {
   const [error, setError] = React.useState('')
-  const [promo, setPromo] = React.useState('')
   const [loading, setLoading] = React.useState(false)
-  const { isPaidUser } = usePaymentContext()
+  const [textLoading, setTextLoading] = React.useState(false)
+  const [localOrderId, setLocalOrderId] = React.useState('')
+  const { isPaidUser, setOrderId, isOrderValid } = usePaymentContext()
 
   React.useEffect(() => {
     if (open && isPaidUser) {
@@ -40,65 +42,90 @@ const VideoDownloadDialogBase = ({ t, open, onClose, onFinish }) => {
         </>
       )}
     >
-      <Box align="center" display="flex" justifyContent="center" alignItems="center" flexDirection="column" minHeight="100%">
-        <Box mb={1}>
+      <Box display="flex" justifyContent="center" alignItems="center" flexDirection="column" minHeight="100%">
+        <Box mb={1} align="center">
           {t('You can download a HD Quality video with sound for a small fee of')}
         &nbsp;
           <b>{ t('US$ 2') }</b>
         .&nbsp;
-          { t('After this payment, you\'ll be able export unlimited videos in this same device for 1 week') }
+          { t('After this payment, you\'ll be able export unlimited videos in this same device for 1 day') }
         .
         </Box>
-        <div className="call-to-action">
-          <a
-            href={`https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=${t('95XS97FYK5XKC')}`}
-            rel="noopener noreferrer"
-            target="_blank"
-            onClick={() => setLoading(true)}
-          >
-            <Button variant="contained" color="primary">
-              <Box display="flex" alignItems="center">
-                {t('Buy with')}&nbsp;&nbsp;<img src="/paypal.png"/>
-              </Box>
-            </Button>
-          </a>
+        <div className="paypal-button">
+          <PayPalButton
+            amount={t('2')}
+            currency={t('USD')}
+            shippingPreference="NO_SHIPPING"
+            onClick={() => {
+              setLoading(true)
+            }}
+            onCancel={() => {
+              setLoading(false)
+            }}
+            onError={() => {
+              setLoading(false)
+            }}
+            onSuccess={(details, data) => {
+              setLoading(true)
+              setOrderId(data.orderID)
+            }}
+            style={{
+              layout: 'horizontal',
+              color: 'white',
+              shape: 'rect',
+              label: 'paypal',
+              height: 40
+            }}
+            options={{
+              clientId: process.env.PAYPAL_ID,
+              currency: t('USD')
+            }}
+          />
         </div>
         {loading && <Box py={2} display="flex" alignItems="center" flexDirection="column">
-          <p>{t('Waiting Payment')}</p>
+          <p>{t('Validating Payment')}</p>
           <CircularProgress/>
         </Box>}
         <Box align="center" mt={4} mb={2}>
-          {t('If you have a promo code, you can also insert it below to get access to 1 week of unlimited exports')}
-        .
+          {t('Have you paid from another device? Insert the your Paypal Order ID here so we can validate it for you')}
+          .
         </Box>
         <TextField
           error={Boolean(error)}
           helperText={error}
-          label={t('Promo Code')}
-          placeholder={t('Paste your promo code here')}
+          label={t('Order ID')}
+          placeholder={t('Paste your Order ID here')}
           variant="outlined"
           fullWidth
-          value={promo}
+          value={localOrderId}
           onChange={async (e) => {
-            const newPromo = e.target.value
-            setPromo(newPromo)
+            const newOrderId = e.target.value
+            setLocalOrderId(newOrderId)
             setError('')
+            setTextLoading(true)
+
+            const isValid = await isOrderValid(newOrderId)
+            if (isValid) {
+              setOrderId(newOrderId)
+              setTimeout(() => {
+                setTextLoading(false)
+              }, 10000)
+              return
+            }
+
+            setError(t('Invalid Order Id'))
+            setTextLoading(false)
           }}
           InputLabelProps={{ shrink: true }}
+          InputProps={textLoading ? {
+            endAdornment: (
+              <InputAdornment position="end">
+                <CircularProgress size={32}/>
+              </InputAdornment>
+            )
+          } : null}
         />
-        <Box mt={3}>
-          {t('By using this website you are agreeing to our')}:&nbsp;
-          <div>
-            <a
-              href="https://help.kassellabs.io/starwars/#termsOfService"
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              { t('Terms of Service') }
-            </a>
-          </div>
-        </Box>
-        <Box mt={1}>
+        <Box mt={1} align="center">
           {t('If you have any questions, please email us at')}:&nbsp;
           <div>
             <a
@@ -110,21 +137,13 @@ const VideoDownloadDialogBase = ({ t, open, onClose, onFinish }) => {
             </a>
           </div>
         </Box>
-        <style jsx>{`
-        .call-to-action {
-          display: flex;
-          justify-content: center;
-
-          a {
-            text-decoration: none;
-          }
-
-          img {
-            height: 24px;
-          }
+      </Box>
+      <style jsx>{`
+        :global(.paypal-button) {
+          height: 40px;
+          overflow: hidden;
         }
       `}</style>
-      </Box>
     </Dialog>
   )
 }

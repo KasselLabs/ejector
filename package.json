@@ -26,6 +26,7 @@
     "react": "16.14.0",
     "react-dom": "16.14.0",
     "react-easy-crop": "^3.3.0",
+    "react-paypal-button-v2": "^2.6.2",
     "react-toastify": "^6.0.9",
     "styled-jsx-plugin-sass": "^1.0.0",
     "tinycolor2": "^1.4.2"

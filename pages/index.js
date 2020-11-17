@@ -11,7 +11,6 @@ import ImageURLField from '../src/components/ImageURLField'
 import SoundControl from '../src/components/SoundControl'
 import ProductHuntButton from '../src/components/ProductHuntButton'
 import SubscribeForm from '../src/components/SubscribeForm'
-import DonateMention from '../src/components/DonateMention'
 import track from '../src/track'
 
 function Index ({ t }) {
@@ -20,7 +19,7 @@ function Index ({ t }) {
 
   const [characterImages, setCharacterImages] = useState('/among-us-red-character-color-reduced.png')
   const image = useMemo(() => {
-    if (Array.isArray(characterImages?.frames)) {
+    if (Array.isArray(characterImages && characterImages.frames)) {
       return characterImages.frames[0].imageURL
     }
 
@@ -63,7 +62,6 @@ function Index ({ t }) {
         <meta name="twitter:image" content="https://ejector.kassellabs.io/twitter-card.png"/>
       </Head>
       <div className="preview-container">
-        <DonateMention/>
         <SubscribeForm/>
         <Box
           className="preview-form"
