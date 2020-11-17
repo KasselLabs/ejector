@@ -12,7 +12,7 @@ const isOrderValid = async (orderId) => {
 
   try {
     const response = await axios.request({
-      url: `http://localhost:3030/validate-order/${orderId}`
+      url: `https://ejector-api.nihey.org/validate-order/${orderId}`
     })
     return response.data.valid
   } catch (e) {
