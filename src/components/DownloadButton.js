@@ -1,4 +1,5 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
+import classnames from 'classnames'
 import { withStyles } from '@material-ui/core/styles'
 import { Box, Button, TextField, CircularProgress, InputAdornment, LinearProgress } from '@material-ui/core'
 import { PayPalButton } from 'react-paypal-button-v2'
@@ -6,6 +7,7 @@ import { PayPalButton } from 'react-paypal-button-v2'
 import { withTranslation } from '../../i18n'
 import Dialog from './Dialog'
 import DropdownMenu from './DropdownMenu'
+import isFFMPEGWorking from '../util/isFFMPEGWorking'
 import useDownloadFile from '../hooks/useDownloadFile'
 import { usePaymentContext } from '../contexts/Payment'
 
@@ -168,6 +170,7 @@ const DownloadButton = ({ t, ejectedText, impostorText, characterImages }) => {
   const completeAudio = useRef(null)
   const [downloadingType, setDownloadingType] = useState('')
   const [isVideoDownloadDialogOpen, setIsVideoDownloadDialogOpen] = useState(false)
+  const [isVideoDownloadWorking, setIsVideoDownloadWorking] = useState(false)
   const { isPaidUser } = usePaymentContext()
 
   const {
@@ -176,12 +179,37 @@ const DownloadButton = ({ t, ejectedText, impostorText, characterImages }) => {
     generateFile
   } = useDownloadFile({ inprogressAudio, completeAudio, ejectedText, impostorText, characterImages })
 
+  useEffect(() => {
+    isFFMPEGWorking().then(isWorking => {
+      setIsVideoDownloadWorking(isWorking)
+    })
+  }, [])
+
   return (
     <Box pt={2} width="100%" align="center">
       <audio src="/task_Inprogress.mp3" ref={inprogressAudio} />
       <audio src="/task_Complete.mp3" ref={completeAudio} />
       <Box display="flex" justifyContent="center">
-        <DropdownMenu
+        {!isVideoDownloadWorking && <Button
+          className={classnames('download-button', { loading })}
+          variant="contained"
+          color="primary"
+          onClick={ () => {
+            setDownloadingType(t('GIF'))
+            generateFile('gif')
+          }}
+        >
+          {
+            loading
+              ? (
+                <span>
+                  { t('Generating') + ' ' + downloadingType + ` (${loadingPercentage}%)` }
+                </span>
+              )
+              : t('Download GIF')
+          }
+        </Button>}
+        {isVideoDownloadWorking && <DropdownMenu
           text={t('Download')}
           loading={loading}
           loadingText={t('Generating') + ' ' + downloadingType + ` (${loadingPercentage}%)`}
@@ -206,7 +234,7 @@ const DownloadButton = ({ t, ejectedText, impostorText, characterImages }) => {
               }
             }
           ]}
-        />
+        />}
       </Box>
       {loading &&
         <Box pt={1}>

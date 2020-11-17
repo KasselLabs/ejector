@@ -25,10 +25,6 @@ export const PaymentContextProvider = ({ children }) => {
   const [orderId, setOrderId] = useLocalStorage('order-id', null)
 
   React.useEffect(() => {
-    setIsPaidUser(false)
-  }, [])
-
-  React.useEffect(() => {
     const poolForOrder = async () => {
       const isValid = await isOrderValid(orderId)
       if (isValid !== isPaidUser) {
