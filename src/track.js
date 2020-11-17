@@ -1,4 +1,4 @@
-export default function event (...args) {
+export default function track (...args) {
   const isServer = typeof window === 'undefined'
   if (isServer || !window.gtag) {
     console.log(...args)

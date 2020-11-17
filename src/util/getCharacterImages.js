@@ -1,7 +1,7 @@
 import getImage from './getImage'
 
 export default async function getCharacterImages (characterImages) {
-  if (Array.isArray(characterImages?.frames)) {
+  if (Array.isArray(characterImages && characterImages.frames)) {
     const framesPromises = characterImages.frames.map(async ({ imageURL, ...frame }) => {
       const image = await getImage(imageURL)
       return {

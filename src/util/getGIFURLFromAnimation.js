@@ -1,5 +1,5 @@
 import GIF from 'gif.js'
-import events, { GIF_GENERATION_LOADING_STEP } from '../events'
+import events, { FILE_GENERATION_LOADING_STEP } from '../events'
 
 import getCharacterImages from './getCharacterImages'
 import drawAnimation from './drawAnimation'
@@ -46,7 +46,7 @@ export default async function getGIFURLFromAnimation (ejectedText, impostorText,
 
   for (let elapsed = 0; elapsed <= ANIMATION_SECONDS; elapsed += (GIF_ANIMATION_FRAME_TIME_DELAY)) {
     const renderingPercentage = elapsed / ANIMATION_SECONDS
-    events.emit(GIF_GENERATION_LOADING_STEP, renderingPercentage / 2)
+    events.emit(FILE_GENERATION_LOADING_STEP, renderingPercentage / 2)
     await drawAnimation(canvas, ejectedText, impostorText, characterImages, elapsed)
 
     const imageURL = canvas.toDataURL('image/png')
@@ -67,7 +67,7 @@ export default async function getGIFURLFromAnimation (ejectedText, impostorText,
     })
 
     gif.on('progress', (percentage) => {
-      events.emit(GIF_GENERATION_LOADING_STEP, 0.5 + (percentage / 2))
+      events.emit(FILE_GENERATION_LOADING_STEP, 0.5 + (percentage / 2))
     })
 
     gif.render()

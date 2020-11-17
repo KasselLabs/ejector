@@ -99,7 +99,7 @@ function SubscribeForm ({ t }) {
           <MapImage src="images/polus.png" />
         </div>
         <Box pb={1} textAlign="center">
-          {t('We plan to launch more features, like victory/defeat screen generators, video download and much more!')}
+          {t('We plan to launch more features, like victory/defeat screen generators and much more!')}
         </Box>
         <Box pb={2} textAlign="center">
           {t('Add your email below if you want to get notified as soon as we do it!')}

@@ -16,6 +16,7 @@
     "canvas-txt": "^2.0.10",
     "classnames": "^2.2.6",
     "event-emitter": "^0.3.5",
+    "ffmpeg.js": "^4.2.9003",
     "gif-frames": "^1.0.1",
     "gif.js": "^0.2.0",
     "lodash": "^4.17.20",
@@ -25,6 +26,7 @@
     "react": "16.14.0",
     "react-dom": "16.14.0",
     "react-easy-crop": "^3.3.0",
+    "react-paypal-button-v2": "^2.6.2",
     "react-toastify": "^6.0.9",
     "styled-jsx-plugin-sass": "^1.0.0",
     "tinycolor2": "^1.4.2"

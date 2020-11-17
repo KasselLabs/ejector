@@ -154,7 +154,7 @@ function drawWatermark (canvas, context) {
   )
 }
 
-const drawAnimation = async (canvas, ejectedText, impostorText, characterImages, elapsed) => {
+const drawAnimation = async (canvas, ejectedText, impostorText, characterImages, elapsed, showWatermark = true) => {
   const { width, height } = canvas
   const context = canvas.getContext('2d')
   context.clearRect(0, 0, width, height)
@@ -163,7 +163,10 @@ const drawAnimation = async (canvas, ejectedText, impostorText, characterImages,
   drawEjectedText(canvas, context, ejectedText, elapsed)
   drawImpostorText(canvas, context, impostorText, elapsed)
   drawCharacter(canvas, context, characterImages, elapsed)
-  drawWatermark(canvas, context)
+
+  if (showWatermark) {
+    drawWatermark(canvas, context)
+  }
 }
 
 export default drawAnimation
