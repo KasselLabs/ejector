@@ -253,6 +253,11 @@ const DownloadButton = ({ t, ejectedText, impostorText, characterImages }) => {
           generateFile('mp4')
         }}
       />
+      <style jsx>{`
+        :global(.download-button.loading) {
+          pointer-events: none;
+        }
+      `}</style>
     </Box>
   )
 }
