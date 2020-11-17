@@ -194,7 +194,7 @@ const DownloadButton = ({ t, ejectedText, impostorText, characterImages }) => {
               }
             },
             {
-              children: t('Download Video'),
+              children: t('Download Video') + (isPaidUser ? '' : ' (Premium)'),
               onClick: () => {
                 if (isPaidUser) {
                   setDownloadingType(t('Video'))

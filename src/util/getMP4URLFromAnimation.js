@@ -36,7 +36,7 @@ export default async function getGIFURLFromAnimation (ejectedText, impostorText,
     const renderingPercentage = elapsed / ANIMATION_SECONDS
     events.emit(FILE_GENERATION_LOADING_STEP, renderingPercentage / 2)
 
-    await drawAnimation(canvas, ejectedText, impostorText, characterImages, elapsed)
+    await drawAnimation(canvas, ejectedText, impostorText, characterImages, elapsed, false)
 
     const imageURL = canvas.toDataURL('image/png')
     const imageFile = await URLToFile(imageURL)
