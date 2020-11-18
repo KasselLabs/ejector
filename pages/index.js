@@ -62,7 +62,6 @@ function Index ({ t }) {
         <meta name="twitter:image" content="https://ejector.kassellabs.io/twitter-card.png"/>
       </Head>
       <div className="preview-container">
-        <SubscribeForm/>
         <Box
           className="preview-form"
           display="flex"
@@ -132,6 +131,9 @@ function Index ({ t }) {
           />
         </Box>
         <canvas id="preview-canvas" className="ejection-preview" width="1920" height="1080"/>
+        <Box pt={2}>
+          <SubscribeForm/>
+        </Box>
         <Box pt={1}>
           <Box display="flex" alignItems="center" justifyContent="center" width="100%">
             {t('Made with love by')}
