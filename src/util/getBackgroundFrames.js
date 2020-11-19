@@ -1,5 +1,6 @@
 import range from './range'
 import getImage from './getImage'
+import events, { BACKGROUND_FRAMES_LOADED } from '../events'
 
 let backgroundFrames = null
 
@@ -14,5 +15,6 @@ export default async function getBackgroundFrames () {
   })
 
   backgroundFrames = await Promise.all(backgroundFramesPromises)
+  events.emit(BACKGROUND_FRAMES_LOADED)
   return backgroundFrames
 };
