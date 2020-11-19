@@ -6,8 +6,15 @@ import classnames from 'classnames'
 import { withTranslation } from '../../i18n'
 import getImage from '../util/getImage'
 
-const COLOR_RED = '#d1211d'
-const COLOR_DARK_RED = '#761328'
+const getColorHexAtIndex = (imageData, index) => {
+  const color = tinycolor({
+    r: imageData.data[index],
+    g: imageData.data[index + 1],
+    b: imageData.data[index + 2]
+  })
+
+  return color.toHexString()
+}
 
 const getColorChangedImage = async (colorToChange) => {
   const canvas = document.createElement('canvas')
@@ -23,6 +30,10 @@ const getColorChangedImage = async (colorToChange) => {
   const darkParsedColorRGBA = parsedColorToChange.darken(darkenPercentage).toRgb()
 
   const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
+
+  const COLOR_RED = getColorHexAtIndex(imageData, 47304)
+  const COLOR_DARK_RED = getColorHexAtIndex(imageData, 47620)
+
   for (var i = 0; i < imageData.data.length; i += 4) {
     const red = imageData.data[i]
     const green = imageData.data[i + 1]
