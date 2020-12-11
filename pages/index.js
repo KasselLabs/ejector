@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import { Box, TextField } from '@material-ui/core'
 import Head from 'next/head'
+import { once } from 'lodash'
 
 import { withTranslation } from '../i18n'
 import CanvasAnimator from '../src/util/CanvasAnimator'
@@ -12,6 +13,10 @@ import SoundControl from '../src/components/SoundControl'
 import ProductHuntButton from '../src/components/ProductHuntButton'
 import SubscribeForm from '../src/components/SubscribeForm'
 import track from '../src/track'
+
+const trackEjectionFormTextChanged = once(() => {
+  track('event', 'ejection_form_text_changed')
+})
 
 function Index ({ t }) {
   const DEFAULT_EJECTED_TEXT = t('Red was not The Impostor')
@@ -37,7 +42,7 @@ function Index ({ t }) {
       ejectedText !== DEFAULT_EJECTED_TEXT ||
       impostorText !== DEFAULT_IMPOSTOR_TEXT
     ) {
-      track('event', 'ejection_form_text_changed')
+      trackEjectionFormTextChanged()
     }
 
     return () => {
