@@ -2,6 +2,7 @@ import React from 'react'
 import axios from 'axios'
 
 import useLocalStorage from '../hooks/useLocalStorage'
+import track from '../track'
 
 const PaymentContext = React.createContext({})
 
@@ -29,6 +30,9 @@ export const PaymentContextProvider = ({ children }) => {
       const isValid = await isOrderValid(orderId)
       if (isValid !== isPaidUser) {
         setIsPaidUser(isValid)
+        if (isValid) {
+          track('event', 'paid')
+        }
       }
     }
     const intervalId = setInterval(poolForOrder, 3000)
