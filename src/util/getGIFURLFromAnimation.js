@@ -47,7 +47,7 @@ export default async function getGIFURLFromAnimation (ejectedText, impostorText,
   for (let elapsed = 0; elapsed <= ANIMATION_SECONDS; elapsed += (GIF_ANIMATION_FRAME_TIME_DELAY)) {
     const renderingPercentage = elapsed / ANIMATION_SECONDS
     events.emit(FILE_GENERATION_LOADING_STEP, renderingPercentage / 2)
-    await drawAnimation(canvas, ejectedText, impostorText, characterImages, elapsed)
+    await drawAnimation(canvas, 'mirahq', ejectedText, impostorText, characterImages, elapsed)
 
     const imageURL = canvas.toDataURL('image/png')
     const image = await getImageElementFromURL(imageURL)

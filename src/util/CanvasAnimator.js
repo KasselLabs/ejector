@@ -43,7 +43,7 @@ export default class CanvasAnimator {
 
       const elapsed = getElapsedSeconds()
       window.elapsedAnimationTime = elapsed
-      await drawAnimation(this.canvas, this.ejectedText, this.impostorText, characterImages, elapsed)
+      await drawAnimation(this.canvas, 'mirahq', this.ejectedText, this.impostorText, characterImages, elapsed)
 
       const elapsedDiff = timer.elapsedDiff() / 1000
       const nextFrameDelay = Math.max(ANIMATION_FRAME_TIME - elapsedDiff, 0)
