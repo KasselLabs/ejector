@@ -15,7 +15,7 @@ import track from '../track'
 const getBackendGeneratedVideo = async (ejectedText, impostorText, characterImageURLs, orderId) => {
   const videoDownloadRequest = await axios.request({
     method: 'POST',
-    url: 'http://localhost:3030/video',
+    url: `${process.env.BACKEND_URL}/video`,
     data: {
       orderId,
       ejectedText,
