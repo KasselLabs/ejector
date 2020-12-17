@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 
+import { usePaymentContext } from '../contexts/Payment'
 import events, { FILE_GENERATION_LOADING_STEP } from '../events'
 import getGIFURLFromAnimation from '../util/getGIFURLFromAnimation'
 import getMP4URLFromAnimation from '../util/getMP4URLFromAnimation'
@@ -27,6 +28,7 @@ const getFileURLFromAnimation = (extension, ...args) => {
 }
 
 const useDownloadFile = ({ inprogressAudio, completeAudio, ejectedText, impostorText, characterImages }) => {
+  const { orderId } = usePaymentContext()
   const [loading, setLoading] = useState(false)
   const [loadingPercentage, setLoadingPercentage] = useState(0)
 
@@ -49,12 +51,12 @@ const useDownloadFile = ({ inprogressAudio, completeAudio, ejectedText, impostor
     setLoading(true)
     inprogressAudio.current.play()
     const fileURL = await getFileURLFromAnimation(extension, ejectedText, impostorText, characterImages)
-    downloadURL(fileURL, ejectedText.replace(/\s|\n/g, '-'), extension)
+    downloadURL(fileURL, ejectedText.replace(/\s|\n/g, '-'), extension, orderId)
     window.URL.revokeObjectURL(fileURL)
     setLoading(false)
     setLoadingPercentage(0)
     completeAudio.current.play()
-  }, [inprogressAudio, completeAudio, ejectedText, impostorText, characterImages])
+  }, [inprogressAudio, completeAudio, ejectedText, impostorText, characterImages, orderId])
 
   return {
     loading,
