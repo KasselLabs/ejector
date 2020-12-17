@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState } from 'react'
 import { withStyles } from '@material-ui/core/styles'
 import {
   Box,
@@ -12,45 +12,9 @@ import { PayPalButton } from 'react-paypal-button-v2'
 
 import { withTranslation } from '../../i18n'
 import Dialog from './Dialog'
-import isFFMPEGWorking from '../util/isFFMPEGWorking'
 import track from '../track'
 import useDownloadFile from '../hooks/useDownloadFile'
 import { usePaymentContext } from '../contexts/Payment'
-
-const VideoDownloadNotSupportedDialogBase = ({ t, open, onClose }) => {
-  React.useEffect(() => {
-    if (open) {
-      track('event', 'modal_video_not_supported_open')
-    }
-  }, [open])
-
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="xs"
-      title={t('Download Video')}
-      actions={(
-        <Button
-          color="primary"
-          variant="text"
-          onClick={onClose}
-        >
-          {t('Close')}
-        </Button>
-      )}
-    >
-      <Box align="center" mb={2}>
-        {t('Unfortunately, downloading videos is currently only enabled on Desktop')}.
-      </Box>
-      <Box align="center">
-        {t('If you really want to download videos, please access this website via a computer, preferrably on a Chrome Browser')}.
-      </Box>
-    </Dialog>
-  )
-}
-
-const VideoDownloadNotSupportedDialog = withTranslation('common')(VideoDownloadNotSupportedDialogBase)
 
 const VideoDownloadDialogBase = ({ t, open, onClose, onFinish }) => {
   // TODO check if necessary allow manual validation by the user
@@ -219,21 +183,11 @@ const DownloadButton = ({ t, ejectedText, impostorText, characterImages }) => {
   const [isVideoDownloadDialogOpen, setIsVideoDownloadDialogOpen] = useState(false)
   const { isPaidUser } = usePaymentContext()
 
-  const [isTestingVideoDownload, setIsTestingVideoDownload] = useState(true)
-  const [isVideoDownloadWorking, setIsVideoDownloadWorking] = useState(false)
-
   const {
     loading,
     loadingPercentage,
     generateFile
   } = useDownloadFile({ inprogressAudio, completeAudio, ejectedText, impostorText, characterImages })
-
-  useEffect(() => {
-    isFFMPEGWorking().then(isWorking => {
-      setIsVideoDownloadWorking(isWorking)
-      setIsTestingVideoDownload(false)
-    })
-  }, [])
 
   return (
     <Box pt={2} width="100%" align="center">
@@ -261,11 +215,6 @@ const DownloadButton = ({ t, ejectedText, impostorText, characterImages }) => {
           variant="contained"
           color="primary"
           onClick={() => {
-            if (isTestingVideoDownload) {
-              // TODO show loading progress when validating browser support
-              return
-            }
-
             if (isPaidUser) {
               setDownloadingType(t('Video'))
               generateFile('mp4')
@@ -293,16 +242,12 @@ const DownloadButton = ({ t, ejectedText, impostorText, characterImages }) => {
         </Box>
       }
       <VideoDownloadDialog
-        open={isVideoDownloadDialogOpen && isVideoDownloadWorking}
+        open={isVideoDownloadDialogOpen}
         onClose={() => setIsVideoDownloadDialogOpen(false)}
         onFinish={() => {
           setDownloadingType(t('Video'))
           generateFile('mp4')
         }}
-      />
-      <VideoDownloadNotSupportedDialog
-        open={isVideoDownloadDialogOpen && !isVideoDownloadWorking}
-        onClose={() => setIsVideoDownloadDialogOpen(false)}
       />
       <style jsx>{`
         :global(.download-button.loading) {

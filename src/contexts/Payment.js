@@ -13,7 +13,7 @@ const isOrderValid = async (orderId) => {
 
   try {
     const response = await axios.request({
-      url: `https://ejector-api.nihey.org/validate-order/${orderId}`
+      url: `${process.env.BACKEND_URL}/validate-order/${orderId}`
     })
     return response.data.valid
   } catch (e) {

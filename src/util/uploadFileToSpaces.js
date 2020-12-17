@@ -8,7 +8,7 @@ export default async function uploadFileToSpaces (text, extension, file) {
 
   const getUploadURLResponse = await axios.request({
     method: 'POST',
-    url: 'https://ejector-api.nihey.org/get-upload-url',
+    url: `${process.env.BACKEND_URL}/get-upload-url`,
     headers: {
       'Content-Type': 'application/json'
     },

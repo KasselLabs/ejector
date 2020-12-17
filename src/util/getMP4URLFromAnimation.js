@@ -1,5 +1,7 @@
+import axios from 'axios'
 import events, { FILE_GENERATION_LOADING_STEP } from '../events'
 
+import isFFMPEGWorking from './isFFMPEGWorking'
 import ffmpeg from './ffmpeg'
 import getCharacterImages from './getCharacterImages'
 import drawAnimation from './drawAnimation'
@@ -9,6 +11,45 @@ import {
   MP4_ANIMATION_FPS
 } from '../constants/animation'
 import track from '../track'
+
+const getBackendGeneratedVideo = async (ejectedText, impostorText, characterImageURLs, orderId) => {
+  const videoDownloadRequest = await axios.request({
+    method: 'POST',
+    url: `${process.env.BACKEND_URL}/video`,
+    data: {
+      orderId,
+      ejectedText,
+      impostorText,
+      characterImageURLs
+    }
+  })
+  const videoId = videoDownloadRequest.data.id
+
+  return new Promise((resolve) => {
+    const checkVideoRenderStatus = async () => {
+      try {
+        const videoRenderStatusResponse = await axios.request({
+          method: 'GET',
+          url: `${process.env.BACKEND_URL}/video/${videoId}`
+        })
+        const video = videoRenderStatusResponse.data
+        const progress = Math.max(0.05, video.renderingProgress / 100)
+        events.emit(FILE_GENERATION_LOADING_STEP, progress)
+
+        if (!video.downloadURL) {
+          setTimeout(checkVideoRenderStatus, 2000)
+          return
+        }
+
+        resolve(video.downloadURL)
+      } catch (error) {
+        // TODO Handle response errors in a better way
+        setTimeout(checkVideoRenderStatus, 2000)
+      }
+    }
+    checkVideoRenderStatus()
+  })
+}
 
 const blobToFile = (blob, filename) => {
   // A Blob() is almost a File() - it's just missing the two properties below which we will add
@@ -22,11 +63,16 @@ export async function URLToFile (url, fileName) {
   return result.arrayBuffer()
 }
 
-export default async function getGIFURLFromAnimation (ejectedText, impostorText, characterImageURLs) {
+export default async function getMP4URLFromAnimation (ejectedText, impostorText, characterImageURLs, orderId) {
   track('event', 'download_mp4_button_initialize', {
     event_label: 'mp4',
     event_category: 'download'
   })
+
+  const isLocalFFMPEGWorking = await isFFMPEGWorking()
+  if (!isLocalFFMPEGWorking) {
+    return getBackendGeneratedVideo(ejectedText, impostorText, characterImageURLs, orderId)
+  }
 
   const FRAME_DELAY = MP4_ANIMATION_FPS / 1000
   const characterImages = await getCharacterImages(characterImageURLs)
