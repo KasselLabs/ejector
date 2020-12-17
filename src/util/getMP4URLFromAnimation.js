@@ -33,7 +33,8 @@ const getBackendGeneratedVideo = async (ejectedText, impostorText, characterImag
           url: `${process.env.BACKEND_URL}/video/${videoId}`
         })
         const video = videoRenderStatusResponse.data
-        events.emit(FILE_GENERATION_LOADING_STEP, video.renderingProgress / 100)
+        const progress = Math.max(0.05, video.renderingProgress / 100)
+        events.emit(FILE_GENERATION_LOADING_STEP, progress)
 
         if (!video.downloadURL) {
           setTimeout(checkVideoRenderStatus, 2000)
