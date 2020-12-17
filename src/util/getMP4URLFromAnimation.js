@@ -30,7 +30,7 @@ const getBackendGeneratedVideo = async (ejectedText, impostorText, characterImag
       try {
         const videoRenderStatusResponse = await axios.request({
           method: 'GET',
-          url: `http://localhost:3030/video/${videoId}`
+          url: `${process.env.BACKEND_URL}/video/${videoId}`
         })
         const video = videoRenderStatusResponse.data
         events.emit(FILE_GENERATION_LOADING_STEP, video.renderingProgress / 100)

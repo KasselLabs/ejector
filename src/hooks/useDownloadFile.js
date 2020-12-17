@@ -50,8 +50,8 @@ const useDownloadFile = ({ inprogressAudio, completeAudio, ejectedText, impostor
 
     setLoading(true)
     inprogressAudio.current.play()
-    const fileURL = await getFileURLFromAnimation(extension, ejectedText, impostorText, characterImages)
-    downloadURL(fileURL, ejectedText.replace(/\s|\n/g, '-'), extension, orderId)
+    const fileURL = await getFileURLFromAnimation(extension, ejectedText, impostorText, characterImages, orderId)
+    downloadURL(fileURL, ejectedText.replace(/\s|\n/g, '-'), extension)
     window.URL.revokeObjectURL(fileURL)
     setLoading(false)
     setLoadingPercentage(0)
