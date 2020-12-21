@@ -137,7 +137,7 @@ export default async function getMP4URLFromAnimation (ejectedText, impostorText,
         const videoURL = window.URL.createObjectURL(videoBlob)
         events.emit(FILE_GENERATION_LOADING_STEP, 1)
         resolve(videoURL)
-        uploadFileToSpaces(ejectedText, 'mp4', blobToFile(videoBlob, 'ejection.mp4'))
+        uploadFileToSpaces(ejectedText, 'mp4', blobToFile(videoBlob, 'ejection.mp4'), orderId)
         track('event', 'download_mp4_button_finish', {
           event_label: 'mp4',
           event_category: 'download'
