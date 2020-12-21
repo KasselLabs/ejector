@@ -27,7 +27,7 @@ const getImageElementFromURL = async (url) => {
   })
 }
 
-export default async function getGIFURLFromAnimation (ejectedText, impostorText, characterImageURLs) {
+export default async function getGIFURLFromAnimation (ejectedText, impostorText, characterImageURLs, orderId) {
   track('event', 'download_button_initialize', {
     event_label: 'gif',
     event_category: 'download'
@@ -59,7 +59,7 @@ export default async function getGIFURLFromAnimation (ejectedText, impostorText,
     gif.on('finished', (blob) => {
       const blobURL = URL.createObjectURL(blob)
       resolve(blobURL)
-      uploadFileToSpaces(ejectedText, 'gif', blobToFile(blob, 'ejection.gif'))
+      uploadFileToSpaces(ejectedText, 'gif', blobToFile(blob, 'ejection.gif'), orderId)
       track('event', 'download_button_finish', {
         event_label: 'gif',
         event_category: 'download'

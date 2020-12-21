@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-export default async function uploadFileToSpaces (text, extension, file) {
+export default async function uploadFileToSpaces (text, extension, file, orderId) {
   const isNotProduction = process.env.ENVIRONMENT !== 'production'
   if (isNotProduction) {
     return
@@ -14,7 +14,8 @@ export default async function uploadFileToSpaces (text, extension, file) {
     },
     data: {
       text,
-      extension
+      extension,
+      orderId
     }
   })
   const uploadURL = getUploadURLResponse.data.url
