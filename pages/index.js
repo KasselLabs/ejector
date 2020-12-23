@@ -1,10 +1,10 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import { Box, TextField } from '@material-ui/core'
-import Head from 'next/head'
 import { once } from 'lodash'
 
 import { withTranslation } from '../i18n'
 import CanvasAnimator from '../src/util/CanvasAnimator'
+import Head from '../src/components/Head'
 import CharacterGenerator from '../src/components/CharacterGenerator'
 import DownloadButton from '../src/components/DownloadButton'
 import UploadArea from '../src/components/UploadArea'
@@ -52,20 +52,7 @@ function Index ({ t }) {
 
   return (
     <div className="page">
-      <Head>
-        <title>{t('Ejector - Eject Someone')}</title>
-        <meta property="og:title" content="Ejector" />
-        <meta property="og:type" content="website" />
-        <meta property="og:description" content="Create an Among Us ejection animation for fun!" />
-        <meta property="og:image" content="https://ejector.kassellabs.io/og-image.png" />
-        <meta property="og:image:width" content="200" />
-        <meta property="og:image:height" content="200" />
-        <meta property="og:url" content="https://ejector.kassellabs.io" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Ejector" />
-        <meta name="twitter:description" content="Create an Among Us ejection animation for fun!" />
-        <meta name="twitter:image" content="https://ejector.kassellabs.io/twitter-card.png"/>
-      </Head>
+      <Head title={t('Ejector - Eject Someone')}/>
       <div className="preview-container">
         <Box
           className="preview-form"
