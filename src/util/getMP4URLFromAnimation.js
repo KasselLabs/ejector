@@ -88,7 +88,7 @@ export default async function getMP4URLFromAnimation (ejectedText, impostorText,
     const renderingPercentage = elapsed / ANIMATION_SECONDS
     events.emit(FILE_GENERATION_LOADING_STEP, renderingPercentage / 2)
 
-    await drawAnimation(canvas, ejectedText, impostorText, characterImages, elapsed, false)
+    await drawAnimation(canvas, ejectedText, impostorText, characterImages, elapsed)
 
     const imageURL = canvas.toDataURL('image/png')
     const imageFile = await URLToFile(imageURL)
