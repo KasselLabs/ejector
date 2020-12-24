@@ -69,10 +69,11 @@ function SubscribeForm ({ t }) {
         setLoading(true)
         await axios.request({
           method: 'POST',
-          url: 'https://sheet.best/api/sheets/2fb54828-0d8f-404c-8ab5-d3496126f9a7',
+          url: `${process.env.BACKEND_URL}/user`,
           data: {
             email,
-            language: navigator.language
+            language: navigator.language,
+            isSubscribed: true
           }
         })
         setLoading(false)

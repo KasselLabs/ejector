@@ -1,5 +1,6 @@
 {
   "2": "2",
+  "3": "3",
   "Ejector - Eject Someone": "Ejector - Eject Someone",
   "Red was not The Impostor": "Red was not The Impostor",
   "1 Impostor remains": "1 Impostor remains",
@@ -60,5 +61,8 @@
   "Order ID": "Order ID",
   "Paste your Order ID here": "Paste your Order ID here",
   "Unfortunately, downloading videos is currently only enabled on Desktop": "Unfortunately, downloading videos is currently only enabled on Desktop",
-  "If you really want to download videos, please access this website via a computer, preferrably on a Chrome Browser": "If you really want to download videos, please access this website via a computer, preferrably on a Chrome Browser"
+  "Ejector - Unsubscribe": "Ejector - Unsubscribe",
+  "You have successfully unsubscribed to our mailing list": "You have successfully unsubscribed to our mailing list",
+  "see-you-again-image": "see-you-again.gif",
+  "US$ 3": "US$ 3"
 }
