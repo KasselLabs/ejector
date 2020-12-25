@@ -6,6 +6,7 @@ module.exports = {
   output: './',
   options: {
     debug: true,
+    removeUnusedKeys: true,
     func: {
       list: ['t'],
       extensions: ['.js', '.jsx']
