@@ -61,7 +61,15 @@ const VideoDownloadDialogBase = ({ t, open, onClose, onFinish }) => {
           <b>{ t('US$ 3') }</b>
         .&nbsp;
           { t('After this payment, you\'ll be able export unlimited videos in this same device for 1 day') }
-        .
+            .
+          <p>
+            { t('All generated videos will feature a watermark') }
+            .&nbsp;
+            { t('If you wish to generate videos without watermark, we can do it for you for US$ 5') }
+            .&nbsp;
+            { t("Contact us through the email below and we'll generate it for you") }
+            .
+          </p>
         </Box>
         <div className="paypal-button">
           <PayPalButton
