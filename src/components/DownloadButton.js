@@ -63,7 +63,7 @@ const VideoDownloadDialogBase = ({ t, open, onClose, onFinish }) => {
           { t('After this payment, you\'ll be able export unlimited videos in this same device for 1 day') }
             .
           <p>
-            { t('All generated videos will feature a watermark') }
+            { t('Downloaded videos will have the same watermark as in the preview') }
             .&nbsp;
             { t('If you wish to generate videos without watermark, we can do it for you for US$ 5') }
             .&nbsp;
