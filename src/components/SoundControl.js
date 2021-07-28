@@ -32,7 +32,7 @@ const SoundControl = ({ t }) => {
   const audioImage = audioOn ? '/audio-on.svg' : '/audio-off.svg'
   return (
     <div>
-      <audio src="/ambiance.mp3" ref={ambianceAudio} loop/>
+      <audio src="https://kassellabs.us-east-1.linodeobjects.com/static-assets/websites/ejector/ambiance.mp3" ref={ambianceAudio} loop/>
       <audio src="/ejected.mp3" ref={ejectedAudio} />
       <Button onClick={onClickButton}>
         <h3 style={{ paddingRight: '5px' }}>{t('Sound')}</h3>
