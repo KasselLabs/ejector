@@ -39,6 +39,7 @@
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-react": "^7.21.4",
     "eslint-plugin-standard": "^4.0.1",
+    "i18next-hmr": "^1.7.5",
     "i18next-scanner": "^2.11.0"
   }
 }

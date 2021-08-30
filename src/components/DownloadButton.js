@@ -150,11 +150,11 @@ const VideoDownloadDialogBase = ({ t, open, onClose, onFinish }) => {
           {t('If you have any questions, please email us at')}:&nbsp;
           <div>
             <a
-              href="mailto:contact@kassellabs.io"
+              href="mailto:ejector@kassellabs.io"
               rel="noopener noreferrer"
               target="_blank"
             >
-              contact@kassellabs.io
+              ejector@kassellabs.io
             </a>
           </div>
         </Box>

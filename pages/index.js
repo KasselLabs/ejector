@@ -148,6 +148,15 @@ function Index ({ t }) {
               href="https://kassellabs.io/"
             >{t('Check our website')}</a>
           </Box>
+          <Box display="flex" justifyContent="center" width="100%" flexWrap="wrap">
+            {t('Need help Contact us via email')}
+            &nbsp;
+            <a
+              href="mailto:ejector@kassellabs.io"
+              rel="noopener noreferrer"
+              target="_blank"
+            >ejector@kassellabs.io</a>
+          </Box>
         </Box>
       </div>
       <style jsx>{`
