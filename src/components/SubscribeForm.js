@@ -69,7 +69,7 @@ function SubscribeForm ({ t }) {
         setLoading(true)
         await axios.request({
           method: 'POST',
-          url: `${process.env.BACKEND_URL}/user`,
+          url: `${process.env.BACKEND_URL}/api/newsletter-subscribers`,
           data: {
             email,
             language: navigator.language,

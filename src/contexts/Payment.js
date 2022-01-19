@@ -13,7 +13,8 @@ const isOrderValid = async (orderId) => {
 
   try {
     const response = await axios.request({
-      url: `${process.env.BACKEND_URL}/validate-order/${orderId}`
+      url: `${process.env.BACKEND_URL}/api/payment/validate/paypal/${orderId}`,
+      method: 'POST'
     })
     return response.data.valid
   } catch (e) {
