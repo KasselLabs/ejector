@@ -9,12 +9,18 @@ import {
   LinearProgress
 } from '@material-ui/core'
 import { PayPalButton } from 'react-paypal-button-v2'
+import dynamic from 'next/dynamic'
 
 import { withTranslation } from '../../i18n'
 import Dialog from './Dialog'
 import track from '../track'
 import useDownloadFile from '../hooks/useDownloadFile'
 import { usePaymentContext } from '../contexts/Payment'
+
+// Load the Email on Client side only to avoid receiving spam emails
+const SupportEmailLink = dynamic(() => import('./SupportEmailLink'), {
+  ssr: false
+})
 
 const VideoDownloadDialogBase = ({ t, open, onClose, onFinish }) => {
   // TODO check if necessary allow manual validation by the user
@@ -149,13 +155,7 @@ const VideoDownloadDialogBase = ({ t, open, onClose, onFinish }) => {
         <Box mt={1} align="center">
           {t('If you have any questions, please email us at')}:&nbsp;
           <div>
-            <a
-              href="mailto:ejector@kassellabs.io"
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              ejector@kassellabs.io
-            </a>
+            <SupportEmailLink/>
           </div>
         </Box>
       </Box>

@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import { Box, TextField } from '@material-ui/core'
 import { once } from 'lodash'
+import dynamic from 'next/dynamic'
 
 import { withTranslation } from '../i18n'
 import CanvasAnimator from '../src/util/CanvasAnimator'
@@ -13,6 +14,11 @@ import SoundControl from '../src/components/SoundControl'
 import ProductHuntButton from '../src/components/ProductHuntButton'
 import SubscribeForm from '../src/components/SubscribeForm'
 import track from '../src/track'
+
+// Load the Email on Client side only to avoid receiving spam emails
+const SupportEmailLink = dynamic(() => import('../src/components/SupportEmailLink'), {
+  ssr: false
+})
 
 const trackEjectionFormTextChanged = once(() => {
   track('event', 'ejection_form_text_changed')
@@ -151,11 +157,7 @@ function Index ({ t }) {
           <Box display="flex" justifyContent="center" width="100%" flexWrap="wrap">
             {t('Need help Contact us via email')}
             &nbsp;
-            <a
-              href="mailto:ejector@kassellabs.io"
-              rel="noopener noreferrer"
-              target="_blank"
-            >ejector@kassellabs.io</a>
+            <SupportEmailLink/>
           </Box>
         </Box>
       </div>
