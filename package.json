@@ -6,7 +6,8 @@
     "scan-texts": "i18next-scanner",
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@material-ui/core": "^4.11.0",
