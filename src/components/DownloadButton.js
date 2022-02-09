@@ -8,7 +8,6 @@ import {
   // InputAdornment,
   LinearProgress
 } from '@material-ui/core'
-import { PayPalButton } from 'react-paypal-button-v2'
 import dynamic from 'next/dynamic'
 
 import { withTranslation } from '../../i18n'
@@ -16,6 +15,7 @@ import Dialog from './Dialog'
 import track from '../track'
 import useDownloadFile from '../hooks/useDownloadFile'
 import { usePaymentContext } from '../contexts/Payment'
+import DonationOptions from '../components/DonationOptions'
 
 // Load the Email on Client side only to avoid receiving spam emails
 const SupportEmailLink = dynamic(() => import('./SupportEmailLink'), {
@@ -29,7 +29,7 @@ const VideoDownloadDialogBase = ({ t, open, onClose, onFinish }) => {
   // const [localOrderId, setLocalOrderId] = React.useState('')
 
   const [loading, setLoading] = React.useState(false)
-  const { isPaidUser, setOrderId } = usePaymentContext()
+  const { isPaidUser } = usePaymentContext()
 
   React.useEffect(() => {
     if (open && isPaidUser) {
@@ -61,54 +61,16 @@ const VideoDownloadDialogBase = ({ t, open, onClose, onFinish }) => {
       )}
     >
       <Box display="flex" justifyContent="center" alignItems="center" flexDirection="column" minHeight="100%">
-        <Box mb={1} align="center">
-          {t('You can download a HD Quality video with sound for a small fee of')}
-        &nbsp;
-          <b>{ t('US$ 3') }</b>
-        .&nbsp;
-          { t('After this payment, you\'ll be able export unlimited videos in this same device for 1 day') }
-            .
-          <p>
-            { t('Downloaded videos will have the same watermark as in the preview') }
-            .&nbsp;
-            { t('If you wish to generate videos without watermark, we can do it for you for US$ 5') }
-            .&nbsp;
-            { t("Contact us through the email below and we'll generate it for you") }
-            .
-          </p>
+        <Box align="center">
+          {t('You can download a video with sound for a small fee')}.
         </Box>
-        <div className="paypal-button">
-          <PayPalButton
-            amount={t('3')}
-            currency={t('USD')}
-            shippingPreference="NO_SHIPPING"
-            onClick={() => {
-              setLoading(true)
-              track('event', 'paypal_button_click')
-            }}
-            onCancel={() => {
-              setLoading(false)
-            }}
-            onError={() => {
-              setLoading(false)
-            }}
-            onSuccess={(details, data) => {
-              setLoading(true)
-              setOrderId(data.orderID)
-            }}
-            style={{
-              layout: 'horizontal',
-              color: 'white',
-              shape: 'rect',
-              label: 'paypal',
-              height: 40
-            }}
-            options={{
-              clientId: process.env.PAYPAL_ID,
-              currency: t('USD')
-            }}
-          />
-        </div>
+        <Box mb={2} align="center">
+          {t('We provide two video options')}:
+        </Box>
+        <DonationOptions
+          t={t}
+          setLoading={setLoading}
+        />
         {loading && <Box py={2} display="flex" alignItems="center" flexDirection="column">
           <p>{t('Validating Payment')}</p>
           <CircularProgress/>
@@ -152,6 +114,9 @@ const VideoDownloadDialogBase = ({ t, open, onClose, onFinish }) => {
             )
           } : null}
         /> */}
+        <Box mt={2} align="center">
+          {t("After the payment, you'll be able download unlimited videos for a 24 hour period")}.
+        </Box>
         <Box mt={1} align="center">
           {t('If you have any questions, please email us at')}:&nbsp;
           <div>
@@ -159,12 +124,6 @@ const VideoDownloadDialogBase = ({ t, open, onClose, onFinish }) => {
           </div>
         </Box>
       </Box>
-      <style jsx>{`
-        :global(.paypal-button) {
-          height: 40px;
-          overflow: hidden;
-        }
-      `}</style>
     </Dialog>
   )
 }
