@@ -177,7 +177,7 @@ const DownloadButton = ({ t, ejectedText, impostorText, characterImages }) => {
             t('Download GIF')
           }
         </Button>
-        <Button
+        {/* <Button
           disabled={loading}
           variant="contained"
           color="primary"
@@ -194,7 +194,7 @@ const DownloadButton = ({ t, ejectedText, impostorText, characterImages }) => {
           {
             t('Download Video')
           }
-        </Button>
+        </Button> */}
       </Box>
       {loading &&
         <Box pt={1}>
