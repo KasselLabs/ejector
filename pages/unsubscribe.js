@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { Typography, Box, CircularProgress } from '@material-ui/core'
 import axios from 'axios'
+import { useTranslation } from 'react-i18next'
 
-import { withTranslation } from '../i18n'
 import Head from '../src/components/Head'
 
-function UnsubscribePage ({ t }) {
+function UnsubscribePage () {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const email = router.query.email
@@ -48,4 +49,4 @@ function UnsubscribePage ({ t }) {
   )
 }
 
-export default withTranslation('common')(UnsubscribePage)
+export default UnsubscribePage

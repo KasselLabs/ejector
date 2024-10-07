@@ -46,4 +46,4 @@ function DonateMention () {
   )
 }
 
-export default withTranslation('common')(DonateMention)
+export default DonateMention
