@@ -9,8 +9,8 @@ import {
   LinearProgress
 } from '@material-ui/core'
 import dynamic from 'next/dynamic'
+import { useTranslation } from 'react-i18next'
 
-import { withTranslation } from '../../i18n'
 import Dialog from './Dialog'
 import track from '../track'
 import useDownloadFile from '../hooks/useDownloadFile'
@@ -22,7 +22,8 @@ const SupportEmailLink = dynamic(() => import('./SupportEmailLink'), {
   ssr: false
 })
 
-const VideoDownloadDialogBase = ({ t, open, onClose, onFinish }) => {
+const VideoDownloadDialogBase = ({ open, onClose, onFinish }) => {
+  const { t } = useTranslation()
   // TODO check if necessary allow manual validation by the user
   // const [error, setError] = React.useState('')
   // const [textLoading, setTextLoading] = React.useState(false)
@@ -127,7 +128,7 @@ const VideoDownloadDialogBase = ({ t, open, onClose, onFinish }) => {
     </Dialog>
   )
 }
-const VideoDownloadDialog = withTranslation('common')(VideoDownloadDialogBase)
+const VideoDownloadDialog = VideoDownloadDialogBase
 
 const CustomLinearProgress = withStyles((theme) => ({
   root: {
@@ -143,7 +144,8 @@ const CustomLinearProgress = withStyles((theme) => ({
   }
 }))(LinearProgress)
 
-const DownloadButton = ({ t, ejectedText, impostorText, characterImages }) => {
+const DownloadButton = ({ ejectedText, impostorText, characterImages }) => {
+  const { t } = useTranslation()
   const inprogressAudio = useRef(null)
   const completeAudio = useRef(null)
   const [downloadingType, setDownloadingType] = useState('')
@@ -225,4 +227,4 @@ const DownloadButton = ({ t, ejectedText, impostorText, characterImages }) => {
   )
 }
 
-export default withTranslation('common')(DownloadButton)
+export default DownloadButton

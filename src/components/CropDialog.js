@@ -12,9 +12,9 @@ import VerticalAlignCenterIcon from '@material-ui/icons/VerticalAlignCenter'
 import FullscreenIcon from '@material-ui/icons/Fullscreen'
 import FullscreenExitIcon from '@material-ui/icons/FullscreenExit'
 import Cropper from 'react-easy-crop'
+import { useTranslation } from 'react-i18next'
 
 import Dialog from './Dialog'
-import { withTranslation } from '../../i18n'
 import getCroppedImages from '../util/getCroppedImages'
 import getResizedImages from '../util/getResizedImages'
 import track from '../track'
@@ -29,7 +29,8 @@ const CROP_SIZE = {
   height: 240
 }
 
-const CropDialog = ({ t, image, onChange, open, onClose }) => {
+const CropDialog = ({ image, onChange, open, onClose }) => {
+  const { t } = useTranslation()
   const [mediaSize, setMediaSize] = React.useState(null)
   const [cropArea, setCropArea] = React.useState(null)
   const [crop, setCrop] = React.useState(DEFAULT_CROP)
@@ -245,4 +246,4 @@ const CropDialog = ({ t, image, onChange, open, onClose }) => {
   )
 }
 
-export default withTranslation('common')(CropDialog)
+export default CropDialog

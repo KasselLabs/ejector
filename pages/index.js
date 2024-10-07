@@ -3,7 +3,7 @@ import { Box, TextField } from '@material-ui/core'
 import { once } from 'lodash'
 import dynamic from 'next/dynamic'
 
-import { withTranslation } from '../i18n'
+import { useTranslation } from 'react-i18next'
 import CanvasAnimator from '../src/util/CanvasAnimator'
 import Head from '../src/components/Head'
 import CharacterGenerator from '../src/components/CharacterGenerator'
@@ -24,7 +24,8 @@ const trackEjectionFormTextChanged = once(() => {
   track('event', 'ejection_form_text_changed')
 })
 
-function Index ({ t }) {
+function Index () {
+  const { t } = useTranslation()
   const DEFAULT_EJECTED_TEXT = t('Red was not The Impostor')
   const DEFAULT_IMPOSTOR_TEXT = t('1 Impostor remains')
 
@@ -214,4 +215,4 @@ Index.getInitialProps = () => ({
   namespacesRequired: ['common']
 })
 
-export default withTranslation('common')(Index)
+export default Index

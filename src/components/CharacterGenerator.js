@@ -2,8 +2,8 @@ import React from 'react'
 import { Box, Typography } from '@material-ui/core'
 import tinycolor from 'tinycolor2'
 import classnames from 'classnames'
+import { useTranslation } from 'react-i18next'
 
-import { withTranslation } from '../../i18n'
 import getImage from '../util/getImage'
 
 const getColorHexAtIndex = (imageData, index) => {
@@ -88,7 +88,8 @@ const colors = [
   { value: '#75f100' }
 ]
 
-function CharacterGenerator ({ t, onChange }) {
+function CharacterGenerator ({ onChange }) {
+  const { t } = useTranslation()
   const [selectedColor, setSelectedColor] = React.useState(colors[0])
 
   React.useEffect(() => {
@@ -140,4 +141,4 @@ function CharacterGenerator ({ t, onChange }) {
   )
 }
 
-export default withTranslation('common')(CharacterGenerator)
+export default CharacterGenerator

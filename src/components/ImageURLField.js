@@ -1,8 +1,8 @@
 import React from 'react'
 import { TextField, CircularProgress } from '@material-ui/core'
 import { debounce } from 'lodash'
+import { useTranslation } from 'react-i18next'
 
-import { withTranslation } from '../../i18n'
 import CropDialog from './CropDialog'
 import getImage from '../util/getImage'
 import getCORSImage from '../util/getCORSImage'
@@ -32,7 +32,8 @@ const debouncedOnImageURLChange = debounce(async (
   }
 }, 300)
 
-function ImageURLField ({ t, value, onChange }) {
+function ImageURLField ({ value, onChange }) {
+  const { t } = useTranslation()
   const [inputValue, setInputValue] = React.useState('')
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState('')
@@ -97,4 +98,4 @@ function ImageURLField ({ t, value, onChange }) {
   )
 }
 
-export default withTranslation('common')(ImageURLField)
+export default ImageURLField

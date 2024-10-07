@@ -3,11 +3,12 @@ import Link from 'next/link'
 import axios from 'axios'
 import { toast } from 'react-toastify'
 import { Box, Button, TextField, CircularProgress } from '@material-ui/core'
+import { useTranslation } from 'react-i18next'
 
-import { withTranslation } from '../../i18n'
 import track from '../track'
 
-function MapImageBase ({ t, src, href = '', available }) {
+function MapImageBase ({ src, href = '', available }) {
+  const { t } = useTranslation()
   const content = (
     <a className="map-image">
       <img className="image" src={src} height="38"/>
@@ -48,15 +49,16 @@ function MapImageBase ({ t, src, href = '', available }) {
   }
 
   return (
-    <Link href={href}>
+    <Link href={href} legacyBehavior>
       { content }
     </Link>
   )
 }
 
-const MapImage = withTranslation('common')(MapImageBase)
+const MapImage = MapImageBase
 
-function SubscribeForm ({ t }) {
+function SubscribeForm () {
+  const { t } = useTranslation()
   const [email, setEmail] = React.useState('')
   const [loading, setLoading] = React.useState(false)
 
@@ -214,4 +216,4 @@ function SubscribeForm ({ t }) {
   )
 }
 
-export default withTranslation('common')(SubscribeForm)
+export default SubscribeForm

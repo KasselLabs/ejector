@@ -1,12 +1,13 @@
 import React from 'react'
 import classnames from 'classnames'
 import { CircularProgress } from '@material-ui/core'
+import { useTranslation } from 'react-i18next'
 
-import { withTranslation } from '../../i18n'
 import CropDialog from './CropDialog'
 import getURLFromFile from '../util/getURLFromFile'
 
-function UploadArea ({ t, label, sublabel, value, onChange }) {
+function UploadArea ({ label, sublabel, value, onChange }) {
+  const { t } = useTranslation()
   const fileInputRef = React.useRef()
   const [loading, setLoading] = React.useState(false)
   const [imageToCrop, setImageToCrop] = React.useState(null)
@@ -99,4 +100,4 @@ function UploadArea ({ t, label, sublabel, value, onChange }) {
   )
 }
 
-export default withTranslation('common')(UploadArea)
+export default UploadArea

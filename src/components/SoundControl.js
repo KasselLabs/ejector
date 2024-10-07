@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Button } from '@material-ui/core'
+import { useTranslation } from 'react-i18next'
 
-import { withTranslation } from '../../i18n'
-
-const SoundControl = ({ t }) => {
+const SoundControl = () => {
+  const { t } = useTranslation()
   const [audioOn, setAudioOn] = useState(false)
   const ambianceAudio = useRef(null)
   const ejectedAudio = useRef(null)
@@ -42,4 +42,4 @@ const SoundControl = ({ t }) => {
   )
 }
 
-export default withTranslation('common')(SoundControl)
+export default SoundControl
