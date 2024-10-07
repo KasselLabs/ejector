@@ -1,9 +1,10 @@
 import React from 'react'
 import { Button, Box } from '@material-ui/core'
 
-import { withTranslation } from '../../i18n'
+import { useTranslation } from 'react-i18next'
 
-function DonateMention ({ t }) {
+function DonateMention () {
+  const { t } = useTranslation()
   return (
     <div className="donate-mention">
       <Box mb={2} textAlign="center">
