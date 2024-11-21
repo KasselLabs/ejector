@@ -83,8 +83,8 @@ export default function DonationOptions ({ t, setLoading }) {
     {
       title: t('HD Video'),
       price: t('hd-price'),
-      priceAmount: t('hd-price-amount'),
-      priceCurrency: t('price-currency'),
+      priceAmount: 3,
+      priceCurrency: 'USD',
       items: [
         '1280 x 720',
         t('MP4 File'),
@@ -94,8 +94,8 @@ export default function DonationOptions ({ t, setLoading }) {
     {
       title: t('Full HD Video'),
       price: t('full-hd-price'),
-      priceAmount: t('full-hd-price-amount'),
-      priceCurrency: t('price-currency'),
+      priceAmount: 5,
+      priceCurrency: 'USD',
       items: [
         '1920 x 1080',
         t('MP4 File'),
