@@ -82,7 +82,7 @@ export default function DonationOptions ({ t, setLoading }) {
   const donationOptions = useMemo(() => [
     {
       title: t('HD Video'),
-      price: t('hd-price'),
+      price: 'US$ 3',
       priceAmount: 3,
       priceCurrency: 'USD',
       items: [
@@ -93,7 +93,7 @@ export default function DonationOptions ({ t, setLoading }) {
     },
     {
       title: t('Full HD Video'),
-      price: t('full-hd-price'),
+      price: 'US$ 5',
       priceAmount: 5,
       priceCurrency: 'USD',
       items: [
