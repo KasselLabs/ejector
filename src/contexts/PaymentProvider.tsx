@@ -49,6 +49,10 @@ export function PaymentProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // set-state-in-effect is a false positive here: refresh() only calls
+    // setState in the async continuation after `await fetchPaidStatus`,
+    // never synchronously during the effect body.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void refresh();
   }, [refresh]);
 
