@@ -132,45 +132,61 @@ export function PaymentDialog({
       }}
     >
       {/* Content (tier cards + ~700px payment iframe) is taller than most
-          viewports: cap the dialog below the screen edges and scroll inside. */}
-      <DialogContent className="max-h-[calc(100dvh-3rem)] overflow-y-auto border border-white bg-black text-white sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{t("Choose your video quality")}</DialogTitle>
-          <DialogDescription>
+          viewports: the overlay scrolls (scroll="outside") so the whole
+          dialog scrolls like the page behind a single themed scrollbar. */}
+      <DialogContent
+        scroll="outside"
+        className="gap-5 rounded-[10px] border-2 border-white bg-black text-white sm:max-w-lg max-sm:max-w-[calc(100vw-24px)]"
+      >
+        <DialogHeader className="gap-1 pr-8">
+          <DialogTitle className="text-lg font-medium tracking-tight">
+            {t("Choose your video quality")}
+          </DialogTitle>
+          <DialogDescription className="text-white/60">
             {t("We provide two video options")}
           </DialogDescription>
         </DialogHeader>
 
         <TierPicker selected={tier} onSelect={handleSelectTier} />
 
-        <div className="relative min-h-[700px] w-full overflow-hidden rounded-lg">
-          {(!iframeLoaded || !code) && (
-            <div className="absolute inset-0 flex items-center justify-center text-sm text-white/50">
-              {t("Loading")}
-            </div>
-          )}
-          {/* Don't mount the iframe until the client code is available, so it
-              never opens with `code=null` and orphans the 24h window. */}
-          {code && (
-            <iframe
-              ref={iframeRef}
-              title="Payment Form"
-              src={`${paymentPageUrl}?embed=true&app=ejector&code=${code}&amount=500`}
-              allow="payment"
-              className="relative min-h-[700px] w-full border-0"
-              onLoad={() => setIframeLoaded(true)}
-            />
-          )}
+        <div className="flex flex-col gap-2">
+          <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/50">
+            {t("Payment details")}
+          </span>
+          {/* Wrapper is exactly the iframe height so it adds no scroll of its
+              own; the overlay is the single scroll surface. */}
+          <div className="relative h-[700px] w-full overflow-hidden rounded-lg">
+            {(!iframeLoaded || !code) && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-sm text-white/50">
+                <span className="size-6 animate-spin rounded-full border-2 border-white/20 border-t-white/60" />
+                {t("Loading")}
+              </div>
+            )}
+            {/* Don't mount the iframe until the client code is available, so it
+                never opens with `code=null` and orphans the 24h window. */}
+            {code && (
+              <iframe
+                ref={iframeRef}
+                title="Payment Form"
+                src={`${paymentPageUrl}?embed=true&app=ejector&code=${code}&amount=500`}
+                allow="payment"
+                className="relative h-[700px] w-full border-0"
+                onLoad={() => setIframeLoaded(true)}
+              />
+            )}
+          </div>
         </div>
 
-        <p className="text-xs text-white/40">
-          {t(
-            "After the payment, you'll be able download unlimited videos for a 24 hour period",
-          )}
-        </p>
-        <p className="text-xs text-white/40">
-          {t("Need help Contact us via email")} <SupportEmailLink />
-        </p>
+        <div className="flex flex-col gap-1 border-t border-white/10 pt-4 text-center text-xs text-white/50">
+          <p>
+            {t(
+              "After the payment, you'll be able download unlimited videos for a 24 hour period",
+            )}
+          </p>
+          <p>
+            {t("Need help Contact us via email")} <SupportEmailLink />
+          </p>
+        </div>
       </DialogContent>
     </Dialog>
   );

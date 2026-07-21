@@ -34,30 +34,36 @@ export function TierPicker({
   const t = useT();
 
   return (
-    <div className="flex gap-3">
-      {TIERS.map(({ tier, nameKey, priceKey, items }) => (
-        <button
-          key={tier}
-          type="button"
-          aria-pressed={selected === tier}
-          onClick={() => onSelect(tier)}
-          className={cn(
-            "flex w-full cursor-pointer flex-col items-center rounded border border-white bg-transparent p-2 text-white outline-none transition-[background,box-shadow] duration-150",
-            selected === tier &&
-              "bg-white/25 shadow-[0_0_10px_white]",
-          )}
-        >
-          <span className="mb-1 text-lg font-bold">{t(nameKey)}</span>
-          {items.map((item) => (
-            <span key={item} className="text-[0.95em]">
-              {t(item)}
+    <div className="flex items-stretch gap-3">
+      {TIERS.map(({ tier, nameKey, priceKey, items }) => {
+        const isSelected = selected === tier;
+        return (
+          <button
+            key={tier}
+            type="button"
+            aria-pressed={isSelected}
+            onClick={() => onSelect(tier)}
+            className={cn(
+              "flex w-full cursor-pointer flex-col items-center gap-1 rounded-lg border p-3 text-center text-white outline-none transition-[background,box-shadow,border-color] duration-150",
+              "focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black",
+              isSelected
+                ? "border-white bg-white/25 shadow-[0_0_10px_white]"
+                : "border-white/60 hover:border-white hover:bg-white/5",
+            )}
+          >
+            <span className="text-base font-semibold">{t(nameKey)}</span>
+            <span className="flex flex-col gap-0.5 text-[0.8rem] text-white/70">
+              {items.map((item) => (
+                <span key={item}>{t(item)}</span>
+              ))}
             </span>
-          ))}
-          <span className="mt-2 text-[1.1em]">
-            {t("Available for")} <b>{t(priceKey)}</b>
-          </span>
-        </button>
-      ))}
+            <span className="mt-auto pt-2 text-sm text-white/80">
+              {t("Available for")}{" "}
+              <b className="text-lg font-semibold text-white">{t(priceKey)}</b>
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }

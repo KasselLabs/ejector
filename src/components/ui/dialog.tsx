@@ -47,14 +47,62 @@ function DialogOverlay({
   )
 }
 
+function DialogCloseButton({
+  size = "icon-sm",
+  className,
+}: {
+  size?: "icon-sm" | "icon"
+  className?: string
+}) {
+  return (
+    <DialogPrimitive.Close data-slot="dialog-close" asChild>
+      <Button variant="ghost" size={size} className={cn("absolute top-2 right-2", className)}>
+        <XIcon />
+        <span className="sr-only">Close</span>
+      </Button>
+    </DialogPrimitive.Close>
+  )
+}
+
 function DialogContent({
   className,
   children,
   showCloseButton = true,
+  scroll,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
+  /** "outside": the overlay itself scrolls and the content sits in normal
+   *  flow (top-aligned, centered) so tall dialogs scroll like the page,
+   *  with a single, overlay-level scrollbar. Omit for the default centered,
+   *  fixed dialog used everywhere else. */
+  scroll?: "outside"
 }) {
+  if (scroll === "outside") {
+    return (
+      <DialogPortal>
+        <DialogOverlay className="themed-scrollbar grid overflow-y-auto bg-black/70 py-8 supports-backdrop-filter:backdrop-blur-xs">
+          <DialogPrimitive.Content
+            data-slot="dialog-content"
+            className={cn(
+              "relative z-50 mx-auto grid h-fit w-full max-w-[calc(100%-2rem)] gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+              className
+            )}
+            {...props}
+          >
+            {children}
+            {showCloseButton && (
+              <DialogCloseButton
+                size="icon"
+                className="text-white/60 hover:bg-white/10 hover:text-white"
+              />
+            )}
+          </DialogPrimitive.Content>
+        </DialogOverlay>
+      </DialogPortal>
+    )
+  }
+
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -67,19 +115,7 @@ function DialogContent({
         {...props}
       >
         {children}
-        {showCloseButton && (
-          <DialogPrimitive.Close data-slot="dialog-close" asChild>
-            <Button
-              variant="ghost"
-              className="absolute top-2 right-2"
-              size="icon-sm"
-            >
-              <XIcon
-              />
-              <span className="sr-only">Close</span>
-            </Button>
-          </DialogPrimitive.Close>
-        )}
+        {showCloseButton && <DialogCloseButton />}
       </DialogPrimitive.Content>
     </DialogPortal>
   )
