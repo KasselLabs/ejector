@@ -1,7 +1,16 @@
 import { staticCharacterFrames } from "@/lib/characterImages";
 import { getCorsUrl } from "@/lib/corsUrl";
 import { decodeGifToCharacterFrames, isGifSource } from "@/lib/gifFrames";
+import { resizeCharacterFrames } from "@/lib/resizeImage";
 import type { CharacterFrames } from "@/types";
+
+// Legacy `getResizedImages` normalization: cap the cropped output at
+// 240×240 with a transparent background, keeping the character asset small.
+const OUTPUT_RESIZE = {
+  maxWidth: 240,
+  maxHeight: 240,
+  backgroundColor: "rgba(0, 0, 0, 0)",
+} as const;
 
 export interface CropArea {
   x: number;
@@ -104,9 +113,15 @@ export async function cropCharacterSource(
         imageUrl: await cropImage(frame.imageUrl, cropArea, rotation),
       })),
     );
-    return { durationSeconds: decoded.durationSeconds, frames };
+    return resizeCharacterFrames(
+      { durationSeconds: decoded.durationSeconds, frames },
+      OUTPUT_RESIZE,
+    );
   }
 
   const croppedImageUrl = await cropImage(src, cropArea, rotation);
-  return staticCharacterFrames(croppedImageUrl);
+  return resizeCharacterFrames(
+    staticCharacterFrames(croppedImageUrl),
+    OUTPUT_RESIZE,
+  );
 }

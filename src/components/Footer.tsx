@@ -19,9 +19,9 @@ export function Footer() {
           rel="noopener noreferrer"
           className="inline-flex items-center"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element -- static brand svg */}
           {/* h-6 w-auto max-w-none: Tailwind preflight's `max-width:100%`
               collapses an intrinsically-sized svg inside this flex anchor */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- static brand svg */}
           <img
             src="/kassel-labs-logo.svg"
             alt="Kassel Labs"
