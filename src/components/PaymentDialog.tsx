@@ -131,7 +131,9 @@ export function PaymentDialog({
         if (!next) handleClose();
       }}
     >
-      <DialogContent className="border border-white bg-black text-white sm:max-w-lg">
+      {/* Content (tier cards + ~700px payment iframe) is taller than most
+          viewports: cap the dialog below the screen edges and scroll inside. */}
+      <DialogContent className="max-h-[calc(100dvh-3rem)] overflow-y-auto border border-white bg-black text-white sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t("Choose your video quality")}</DialogTitle>
           <DialogDescription>
