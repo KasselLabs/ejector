@@ -62,7 +62,9 @@ export function HomePage() {
       ejectedText,
       impostorText,
       characterFrames,
-      showWatermark: false,
+      // Legacy parity: the live preview always carries the watermark; only
+      // the paid full-hd export renders clean.
+      showWatermark: true,
     }),
     [ejectedText, impostorText, characterFrames],
   );
