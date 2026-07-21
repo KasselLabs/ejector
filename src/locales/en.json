@@ -48,14 +48,9 @@
   "You can download a video with sound for a small fee": "You can download a video with sound for a small fee",
   "We provide two video options": "We provide two video options",
   "HD Video": "HD Video",
-  "hd-price": "US$ 3",
-  "hd-price-amount": "3",
-  "price-currency": "USD",
   "MP4 File": "MP4 File",
   "Includes Watermark": "Includes Watermark",
   "Full HD Video": "Full HD Video",
-  "full-hd-price": "US$ 5",
-  "full-hd-price-amount": "5",
   "No Watermark": "No Watermark",
   "Available for": "Available for",
   "After the payment, you'll be able download unlimited videos for a 24 hour period": "After the payment, you'll be able download unlimited videos for a 24 hour period",
@@ -68,5 +63,7 @@
   "Your email": "Your email",
   "Unsubscribe": "Unsubscribe",
   "You have been unsubscribed": "You have been unsubscribed",
-  "Something went wrong. Please try again.": "Something went wrong. Please try again."
+  "Something went wrong. Please try again.": "Something went wrong. Please try again.",
+  "US$ 3": "US$ 3",
+  "US$ 5": "US$ 5"
 }

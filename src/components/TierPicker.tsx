@@ -13,13 +13,13 @@ const TIERS: {
   {
     tier: "hd",
     nameKey: "HD Video",
-    priceKey: "hd-price",
+    priceKey: "US$ 3",
     watermarkKey: "Includes Watermark",
   },
   {
     tier: "full-hd",
     nameKey: "Full HD Video",
-    priceKey: "full-hd-price",
+    priceKey: "US$ 5",
     watermarkKey: "No Watermark",
   },
 ];
