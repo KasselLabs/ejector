@@ -66,7 +66,7 @@ export function PlayerPreview({
   }, [soundOn]);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl shadow-black/50">
+    <div className="overflow-hidden rounded-[10px] border-[3px] border-solid border-white bg-black">
       <Player
         ref={playerRef}
         component={EjectorComposition}

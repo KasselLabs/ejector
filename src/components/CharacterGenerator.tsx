@@ -34,15 +34,15 @@ export function CharacterGenerator({
 
   return (
     <div>
-      <h3 className="pb-2 text-sm font-medium text-foreground">
-        {t("Select Your Character Color")}
+      <h3 className="pb-2 text-sm font-medium text-white">
+        {t("Select Your Character Color")}:
       </h3>
       <div className="flex w-full items-center justify-between gap-4">
         {/* eslint-disable-next-line @next/next/no-img-element -- data: URL previews are not optimizable by next/image */}
         <img
           src={previewUrl}
           alt=""
-          className="h-[42px] w-auto shrink-0"
+          className="h-[38px] w-auto shrink-0"
         />
         <div className="flex flex-wrap items-center justify-center gap-2">
           {CHARACTER_COLORS.map((color) => {
@@ -54,8 +54,8 @@ export function CharacterGenerator({
                 aria-label={color.value}
                 onClick={() => void handleSelect(color)}
                 className={cn(
-                  "h-[42px] w-[42px] cursor-pointer rounded-lg",
-                  isSelected && "ring-2 ring-white",
+                  "h-[38px] w-[38px] cursor-pointer rounded-md",
+                  isSelected && "ring-2 ring-white ring-offset-2 ring-offset-black",
                 )}
                 style={{ background: color.value }}
               />

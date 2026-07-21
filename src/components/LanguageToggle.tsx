@@ -14,25 +14,25 @@ export function LanguageToggle() {
     <div
       role="group"
       aria-label="Language"
-      className="inline-flex items-center rounded-full border border-white/10 p-0.5 text-xs font-medium"
+      className="mt-1 inline-flex items-center gap-1 text-[11px] text-white/50"
     >
-      {OPTIONS.map((option) => {
+      {OPTIONS.map((option, index) => {
         const active = option.value === locale;
         return (
-          <button
-            key={option.value}
-            type="button"
-            aria-pressed={active}
-            onClick={() => setLocale(option.value)}
-            className={cn(
-              "rounded-full px-2.5 py-1 transition-colors",
-              active
-                ? "bg-white/15 text-white"
-                : "text-white/60 hover:text-white",
-            )}
-          >
-            {option.label}
-          </button>
+          <span key={option.value} className="inline-flex items-center gap-1">
+            {index > 0 && <span aria-hidden>·</span>}
+            <button
+              type="button"
+              aria-pressed={active}
+              onClick={() => setLocale(option.value)}
+              className={cn(
+                "transition-colors hover:text-white",
+                active ? "text-white underline" : "text-white/50",
+              )}
+            >
+              {option.label}
+            </button>
+          </span>
         );
       })}
     </div>

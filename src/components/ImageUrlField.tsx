@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useT } from "@/lib/i18n";
 import { getCorsUrl } from "@/lib/corsUrl";
-import { Input } from "@/components/ui/input";
+import { OutlinedField } from "@/components/OutlinedField";
 import { CropDialog } from "@/components/CropDialog";
 import type { CharacterFrames } from "@/types";
 
@@ -64,11 +64,11 @@ export function ImageUrlField({
 
   return (
     <div>
-      <Input
+      <OutlinedField
+        label={t("Image URL")}
         value={inputValue}
         onChange={handleChange}
         placeholder={t("Or Paste a Image URL here")}
-        aria-label={t("Image URL")}
         aria-invalid={Boolean(error)}
       />
       {error && <p className="mt-1 text-sm text-destructive">{error}</p>}

@@ -37,23 +37,30 @@ export function DownloadSection({ props }: { props: EjectorProps }) {
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-      <div className="flex gap-3">
+    <div className="flex flex-col items-center gap-3">
+      <div className="flex flex-wrap justify-center gap-3">
         <Button
           type="button"
           variant="outline"
+          className="uppercase tracking-wide"
           disabled={busy}
           onClick={handleDownloadGif}
         >
           {t("Download GIF")}
         </Button>
-        <Button type="button" disabled={busy} onClick={handleDownloadVideo}>
+        <Button
+          type="button"
+          variant="outline"
+          className="uppercase tracking-wide"
+          disabled={busy}
+          onClick={handleDownloadVideo}
+        >
           {t("Download Video")}
         </Button>
       </div>
 
       {busy && (
-        <div className="flex flex-col gap-1">
+        <div className="flex w-full flex-col gap-1">
           <span className="text-xs text-white/50">{t("Generating")}</span>
           <Progress value={progress * 100} />
         </div>

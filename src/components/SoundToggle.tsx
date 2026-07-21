@@ -1,9 +1,7 @@
 "use client";
 
 import { useCallback, useSyncExternalStore } from "react";
-import { Volume2, VolumeX } from "lucide-react";
 import { useT } from "@/lib/i18n";
-import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "ejector-sound-on";
 
@@ -61,17 +59,16 @@ export function SoundToggle({
       aria-pressed={soundOn}
       aria-label={t("Sound")}
       onClick={() => onToggle(!soundOn)}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/10 hover:text-white",
-        soundOn && "text-white",
-      )}
+      className="inline-flex items-center gap-1.5 uppercase tracking-wide text-white"
     >
-      {soundOn ? (
-        <Volume2 className="size-4" />
-      ) : (
-        <VolumeX className="size-4" />
-      )}
-      <span className="hidden sm:inline">{t("Sound")}</span>
+      <span className="text-sm font-medium">{t("Sound")}</span>
+      {/* eslint-disable-next-line @next/next/no-img-element -- static white speaker svg, not optimizable */}
+      <img
+        src={soundOn ? "/audio-on.svg" : "/audio-off.svg"}
+        alt=""
+        width={24}
+        height={24}
+      />
     </button>
   );
 }

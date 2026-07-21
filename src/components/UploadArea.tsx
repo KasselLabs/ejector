@@ -33,11 +33,14 @@ export function UploadArea({
   }
 
   return (
-    <div>
-      <label className="flex min-h-full min-w-[132px] max-w-[132px] cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dotted border-border p-3 text-center">
+    <div className="min-h-full">
+      <label className="relative flex min-h-full min-w-[132px] max-w-[132px] cursor-pointer flex-col items-center justify-center gap-2 rounded-[10px] border-[3px] border-dotted border-white p-3 text-center">
+        <span className="absolute -top-[15px] left-1/2 -translate-x-1/2 bg-black px-2 py-1 text-white">
+          {t("OR")}
+        </span>
         {/* eslint-disable-next-line @next/next/no-img-element -- data: URL previews are not optimizable by next/image */}
         <img src={previewUrl} alt="" className="h-8 w-auto" />
-        <span className="text-xs text-muted-foreground">
+        <span className="text-[0.85em] text-white">
           {t("Upload an Ejection Image Here")}
         </span>
         <input

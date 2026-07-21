@@ -6,7 +6,6 @@ import { staticCharacterFrames } from "@/lib/characterImages";
 import { DEFAULT_CHARACTER_URL } from "@/remotion/EjectorComposition";
 import { trackEvent } from "@/lib/tracking";
 import type { CharacterFrames, EjectorProps } from "@/types";
-import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { PlayerPreview } from "@/components/PlayerPreview";
 import { EditorForm } from "@/components/EditorForm";
@@ -69,37 +68,32 @@ export function HomePage() {
   );
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <Navbar soundOn={soundOn} onToggleSound={setSoundOn} />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">
-        <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
-          <div className="flex flex-col gap-4">
-            <PlayerPreview props={props} soundOn={soundOn} />
-          </div>
-          <div className="flex flex-col gap-4">
-            <EditorForm
-              ejectedText={ejectedText}
-              impostorText={impostorText}
-              characterFrames={characterFrames}
-              onEjectedTextChange={(value) => {
-                markEdited("ejected");
-                setEjectedText(value);
-              }}
-              onImpostorTextChange={(value) => {
-                markEdited("impostor");
-                setImpostorText(value);
-              }}
-              onCharacterFramesChange={setCharacterFrames}
-              onError={setErrorMessage}
-            />
-            <DownloadSection props={props} />
-          </div>
+    <div className="flex min-h-dvh w-full flex-col items-center justify-center px-4 py-4 max-lg:justify-start">
+      <SubscribeForm />
+      <div className="w-full max-w-[680px] max-lg:max-w-[calc(100vw-32px)]">
+        <div className="mb-4 flex flex-col gap-4 rounded-[10px] border-[3px] border-solid border-white p-4">
+          <EditorForm
+            ejectedText={ejectedText}
+            impostorText={impostorText}
+            characterFrames={characterFrames}
+            soundOn={soundOn}
+            onToggleSound={setSoundOn}
+            onEjectedTextChange={(value) => {
+              markEdited("ejected");
+              setEjectedText(value);
+            }}
+            onImpostorTextChange={(value) => {
+              markEdited("impostor");
+              setImpostorText(value);
+            }}
+            onCharacterFramesChange={setCharacterFrames}
+            onError={setErrorMessage}
+          />
+          <DownloadSection props={props} />
         </div>
-        <div className="mt-6">
-          <SubscribeForm />
-        </div>
-      </main>
-      <Footer />
+        <PlayerPreview props={props} soundOn={soundOn} />
+        <Footer />
+      </div>
       <ErrorDialog
         message={errorMessage}
         onClose={() => setErrorMessage(null)}
