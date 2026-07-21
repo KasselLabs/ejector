@@ -15,7 +15,6 @@
     "e2e:ui": "playwright test --ui"
   },
   "dependencies": {
-    "@base-ui/react": "^1.6.0",
     "@remotion/player": "^4.0.495",
     "@remotion/web-renderer": "^4.0.495",
     "class-variance-authority": "^0.7.1",
