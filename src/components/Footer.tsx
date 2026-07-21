@@ -20,7 +20,13 @@ export function Footer() {
           className="inline-flex items-center"
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- static brand svg */}
-          <img src="/kassel-labs-logo.svg" alt="Kassel Labs" height={24} />
+          {/* h-6 w-auto max-w-none: Tailwind preflight's `max-width:100%`
+              collapses an intrinsically-sized svg inside this flex anchor */}
+          <img
+            src="/kassel-labs-logo.svg"
+            alt="Kassel Labs"
+            className="h-6 w-auto max-w-none"
+          />
         </a>
       </p>
       <p className="flex flex-wrap items-center justify-center">
