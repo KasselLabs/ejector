@@ -15,6 +15,7 @@ export function EditorForm({
   onEjectedTextChange,
   onImpostorTextChange,
   onCharacterFramesChange,
+  onError,
 }: {
   ejectedText: string;
   impostorText: string;
@@ -22,6 +23,7 @@ export function EditorForm({
   onEjectedTextChange: (value: string) => void;
   onImpostorTextChange: (value: string) => void;
   onCharacterFramesChange: (frames: CharacterFrames) => void;
+  onError?: (message: string) => void;
 }) {
   const t = useT();
   const previewUrl = characterFrames.frames[0]?.imageUrl ?? "";
@@ -53,12 +55,16 @@ export function EditorForm({
       <CharacterGenerator onChange={onCharacterFramesChange} />
 
       <div className="flex items-stretch gap-3">
-        <UploadArea previewUrl={previewUrl} onChange={onCharacterFramesChange} />
+        <UploadArea
+          previewUrl={previewUrl}
+          onChange={onCharacterFramesChange}
+          onError={onError}
+        />
         <div className="flex flex-1 flex-col justify-center gap-2">
           <span className="text-center text-xs font-medium text-white/40">
             {t("OR")}
           </span>
-          <ImageUrlField onChange={onCharacterFramesChange} />
+          <ImageUrlField onChange={onCharacterFramesChange} onError={onError} />
         </div>
       </div>
     </div>

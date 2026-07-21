@@ -90,6 +90,7 @@ export function HomePage() {
                 setImpostorText(value);
               }}
               onCharacterFramesChange={setCharacterFrames}
+              onError={setErrorMessage}
             />
             <DownloadSection props={props} />
           </div>

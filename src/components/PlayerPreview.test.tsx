@@ -1,24 +1,39 @@
-import { describe, expect, it, vi, beforeAll } from "vitest";
+import { describe, expect, it, vi, beforeAll, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import type { EjectorProps } from "@/types";
 import { staticCharacterFrames } from "@/lib/characterImages";
 import { DEFAULT_CHARACTER_URL } from "@/remotion/EjectorComposition";
 
-// Player needs a real browser (canvas/video); stub it to a div that
-// captures the composition config it was mounted with.
-vi.mock("@remotion/player", () => ({
-  Player: (props: Record<string, unknown>) => (
-    <div
-      data-testid="player"
-      data-duration={String(props.durationInFrames)}
-      data-fps={String(props.fps)}
-      data-width={String(props.compositionWidth)}
-      data-height={String(props.compositionHeight)}
-      data-muted={String(props.initiallyMuted)}
-      data-props={JSON.stringify(props.inputProps)}
-    />
-  ),
+// Imperative mute/unmute spies exposed through the mocked Player's ref, so we
+// can assert PlayerPreview drives the player's mute state via PlayerRef (not
+// just the mount-time initiallyMuted prop).
+const { muteMock, unmuteMock } = vi.hoisted(() => ({
+  muteMock: vi.fn(),
+  unmuteMock: vi.fn(),
 }));
+
+// Player needs a real browser (canvas/video); stub it to a div that captures
+// the composition config it was mounted with, and exposes mute/unmute on its
+// imperative ref handle.
+vi.mock("@remotion/player", async () => {
+  const { forwardRef, useImperativeHandle } = await import("react");
+  return {
+    Player: forwardRef<unknown, Record<string, unknown>>((props, ref) => {
+      useImperativeHandle(ref, () => ({ mute: muteMock, unmute: unmuteMock }));
+      return (
+        <div
+          data-testid="player"
+          data-duration={String(props.durationInFrames)}
+          data-fps={String(props.fps)}
+          data-width={String(props.compositionWidth)}
+          data-height={String(props.compositionHeight)}
+          data-muted={String(props.initiallyMuted)}
+          data-props={JSON.stringify(props.inputProps)}
+        />
+      );
+    }),
+  };
+});
 
 import { PlayerPreview } from "./PlayerPreview";
 
@@ -33,6 +48,11 @@ beforeAll(() => {
   // jsdom does not implement media playback
   vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
   vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+});
+
+beforeEach(() => {
+  muteMock.mockClear();
+  unmuteMock.mockClear();
 });
 
 describe("PlayerPreview", () => {
@@ -61,6 +81,20 @@ describe("PlayerPreview", () => {
   it("does not mute the player when sound is on", () => {
     render(<PlayerPreview props={baseProps} soundOn />);
     expect(screen.getByTestId("player")).toHaveAttribute("data-muted", "false");
+  });
+
+  it("unmutes the player via its ref when sound is on", () => {
+    render(<PlayerPreview props={baseProps} soundOn />);
+    expect(unmuteMock).toHaveBeenCalled();
+    expect(muteMock).not.toHaveBeenCalled();
+  });
+
+  it("mutes the player via its ref when sound toggles off", () => {
+    const { rerender } = render(<PlayerPreview props={baseProps} soundOn />);
+    muteMock.mockClear();
+    unmuteMock.mockClear();
+    rerender(<PlayerPreview props={baseProps} soundOn={false} />);
+    expect(muteMock).toHaveBeenCalled();
   });
 
   it("renders an ambient background audio element", () => {

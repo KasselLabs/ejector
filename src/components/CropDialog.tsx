@@ -23,11 +23,13 @@ export function CropDialog({
   open,
   onClose,
   onChange,
+  onError,
 }: {
   image: string | null;
   open: boolean;
   onClose: () => void;
   onChange: (frames: CharacterFrames) => void;
+  onError?: (message: string) => void;
 }) {
   const t = useT();
   const [crop, setCrop] = useState<Point>(DEFAULT_CROP);
@@ -61,6 +63,12 @@ export function CropDialog({
       );
       onChange(frames);
       handleClose();
+    } catch {
+      // A failed fetch/crop (e.g. a tainted canvas or unreachable image) must
+      // not leave the dialog hanging open with an unhandled rejection: close
+      // and surface a translated error to the caller.
+      handleClose();
+      onError?.(t("Something went wrong. Please try again."));
     } finally {
       setIsSubmitting(false);
     }

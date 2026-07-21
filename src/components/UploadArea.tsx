@@ -8,9 +8,11 @@ import type { CharacterFrames } from "@/types";
 export function UploadArea({
   previewUrl,
   onChange,
+  onError,
 }: {
   previewUrl: string;
   onChange: (frames: CharacterFrames) => void;
+  onError?: (message: string) => void;
 }) {
   const t = useT();
   const [pendingImage, setPendingImage] = useState<string | null>(null);
@@ -54,6 +56,7 @@ export function UploadArea({
           onChange(frames);
           setPendingImage(null);
         }}
+        onError={onError}
       />
     </div>
   );

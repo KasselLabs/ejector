@@ -31,8 +31,10 @@ async function validateImageUrl(url: string): Promise<void> {
 
 export function ImageUrlField({
   onChange,
+  onError,
 }: {
   onChange: (frames: CharacterFrames) => void;
+  onError?: (message: string) => void;
 }) {
   const t = useT();
   const [inputValue, setInputValue] = useState("");
@@ -79,6 +81,7 @@ export function ImageUrlField({
           setPendingImage(null);
           setInputValue("");
         }}
+        onError={onError}
       />
     </div>
   );

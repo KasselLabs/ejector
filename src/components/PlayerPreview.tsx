@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Player } from "@remotion/player";
+import { Player, type PlayerRef } from "@remotion/player";
 import {
   EjectorComposition,
   COMPOSITION_FPS,
@@ -56,10 +56,19 @@ export function PlayerPreview({
   soundOn: boolean;
 }) {
   const audioRef = useAmbientAudio(soundOn);
+  const playerRef = useRef<PlayerRef>(null);
+
+  // `initiallyMuted` only sets the mount-time state; imperatively (un)mute the
+  // player whenever the sound toggle changes so the preview audio follows it.
+  useEffect(() => {
+    if (soundOn) playerRef.current?.unmute();
+    else playerRef.current?.mute();
+  }, [soundOn]);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl shadow-black/50">
       <Player
+        ref={playerRef}
         component={EjectorComposition}
         inputProps={props}
         durationInFrames={COMPOSITION_DURATION_IN_FRAMES}

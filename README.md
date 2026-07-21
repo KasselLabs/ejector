@@ -27,7 +27,7 @@ template) and is read once in `src/lib/config.ts`.
 | Variable | Purpose | Default when unset |
 | --- | --- | --- |
 | `NEXT_PUBLIC_PAYMENT_PAGE_URL` | Origin of the payment-frontend app embedded as an iframe for checkout, and the only origin `postMessage` payment-success events are trusted from. | `https://payment.kassellabs.io` |
-| `NEXT_PUBLIC_PAYMENT_API_URL` | Base URL of the payment-backend API, used for the `GET /payment/ejector/:code/paid` paid-status check. | `""` (same-origin) |
+| `NEXT_PUBLIC_PAYMENT_API_URL` | Base URL of the payment-backend API, used for the `GET /payment/ejector/:code/paid` paid-status check. **Must be set in production** (the payment-backend origin) — when unset it resolves same-origin, so the 24h paid-status restore silently no-ops and returning paid users are re-prompted to pay. Example production value: `https://payment-api.kassellabs.io` _(example — confirm actual deploy URL)_. | `""` (same-origin) |
 | `NEXT_PUBLIC_ADMIN_GRAPHQL_URL` | GraphQL endpoint on `admin.kassellabs.io` used for newsletter subscribe/unsubscribe. | `https://admin.kassellabs.io/graphql` |
 | `NEXT_PUBLIC_GA_ID` | Google Analytics measurement ID. Tracking is a no-op when unset. | `""` (disabled) |
 
