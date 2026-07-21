@@ -16,7 +16,3 @@ export async function fetchPaidStatus(code: string): Promise<PaidStatus> {
 export function tierForDollarValue(v: number | undefined): PaidTier {
   return v !== undefined && v >= 5 ? "full-hd" : "hd";
 }
-
-export function tierForCents(c: number): PaidTier {
-  return c >= 500 ? "full-hd" : "hd";
-}

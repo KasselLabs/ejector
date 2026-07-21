@@ -44,7 +44,7 @@ const props: EjectorProps = {
 function PreSeededPaid({ children }: { children: React.ReactNode }) {
   const { markPaid } = usePayment();
   useEffect(() => {
-    markPaid(500);
+    markPaid(5);
   }, [markPaid]);
   return <>{children}</>;
 }

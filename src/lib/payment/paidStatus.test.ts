@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
-import { fetchPaidStatus, tierForCents, tierForDollarValue } from "./paidStatus";
+import { fetchPaidStatus, tierForDollarValue } from "./paidStatus";
 
 describe("fetchPaidStatus", () => {
   it("returns the backend payload", async () => {
@@ -38,9 +38,5 @@ describe("tiers", () => {
     expect(tierForDollarValue(3)).toBe("hd");
     expect(tierForDollarValue(5)).toBe("full-hd");
     expect(tierForDollarValue(undefined)).toBe("hd");
-  });
-  it("maps cents", () => {
-    expect(tierForCents(300)).toBe("hd");
-    expect(tierForCents(500)).toBe("full-hd");
   });
 });

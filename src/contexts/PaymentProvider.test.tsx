@@ -10,7 +10,7 @@ function Probe() {
   return (
     <div>
       <span data-testid="state">{`paid:${paid} tier:${tier}`}</span>
-      <button onClick={() => markPaid(300)}>pay</button>
+      <button onClick={() => markPaid(3)}>pay</button>
       <button onClick={() => void refresh()}>refresh</button>
     </div>
   );
@@ -33,7 +33,7 @@ describe("PaymentProvider", () => {
     ).toBeInTheDocument();
   });
 
-  it("markPaid unlocks immediately with the cents-derived tier", async () => {
+  it("markPaid unlocks immediately with the dollars-derived tier", async () => {
     server.use(
       http.get("*/payment/ejector/:code/paid", () =>
         HttpResponse.json({ paid: false }),
