@@ -27,7 +27,7 @@ export {
 export const DEFAULT_CHARACTER_URL =
   "/among-us-red-character-color-reduced.png";
 
-const BACKGROUND_FRAME_COUNT = 154; // 1.png .. 154.png
+const BACKGROUND_FRAME_COUNT = 153; // legacy range(1, 154) is half-open: 1.png .. 153.png
 
 export function backgroundFrameSrc(frame: number): string {
   const index = Math.min(BACKGROUND_FRAME_COUNT - 1, Math.round(frame));

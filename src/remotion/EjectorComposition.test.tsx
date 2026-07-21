@@ -7,10 +7,10 @@ import {
 } from "./EjectorComposition";
 
 describe("backgroundFrameSrc", () => {
-  it("maps frame 0 to 1.png and clamps at 154.png", () => {
+  it("maps frame 0 to 1.png and clamps at 153.png", () => {
     expect(backgroundFrameSrc(0)).toBe("/among-us-background-images/1.png");
-    expect(backgroundFrameSrc(153)).toBe("/among-us-background-images/154.png");
-    expect(backgroundFrameSrc(164)).toBe("/among-us-background-images/154.png");
+    expect(backgroundFrameSrc(152)).toBe("/among-us-background-images/153.png");
+    expect(backgroundFrameSrc(164)).toBe("/among-us-background-images/153.png");
   });
 });
 
