@@ -7,10 +7,6 @@
 
 # testing
 /coverage
-/test-results
-/playwright-report
-/blob-report
-/playwright/.cache
 
 # next.js
 /.next/
@@ -36,10 +32,4 @@ yarn-error.log*
 .env.production.local
 
 # vercel
-.vercel
-.superpowers/
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
 .vercel
