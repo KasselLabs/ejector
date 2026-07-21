@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import { getCorsUrl } from "./corsUrl";
 
 describe("getCorsUrl", () => {
-  it("routes http(s) URLs through the same-origin proxy, URL-encoded", () => {
+  it("routes http(s) URLs through the shared CORS proxy", () => {
     expect(getCorsUrl("https://example.com/a.png")).toBe(
-      "/api/proxy-image?url=https%3A%2F%2Fexample.com%2Fa.png",
+      "https://cors.kassellabs.io/https://example.com/a.png",
     );
     expect(getCorsUrl("http://example.com/a.gif?x=1")).toBe(
-      "/api/proxy-image?url=http%3A%2F%2Fexample.com%2Fa.gif%3Fx%3D1",
+      "https://cors.kassellabs.io/http://example.com/a.gif?x=1",
     );
   });
   it("passes through data URLs and relative paths", () => {
