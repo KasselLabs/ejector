@@ -10,6 +10,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { PlayerPreview } from "@/components/PlayerPreview";
 import { EditorForm } from "@/components/EditorForm";
+import { DownloadSection } from "@/components/DownloadSection";
 import { ErrorDialog } from "@/components/ErrorDialog";
 import { useSoundOn } from "@/components/SoundToggle";
 
@@ -74,20 +75,23 @@ export function HomePage() {
           <div className="flex flex-col gap-4">
             <PlayerPreview props={props} soundOn={soundOn} />
           </div>
-          <EditorForm
-            ejectedText={ejectedText}
-            impostorText={impostorText}
-            characterFrames={characterFrames}
-            onEjectedTextChange={(value) => {
-              markEdited("ejected");
-              setEjectedText(value);
-            }}
-            onImpostorTextChange={(value) => {
-              markEdited("impostor");
-              setImpostorText(value);
-            }}
-            onCharacterFramesChange={setCharacterFrames}
-          />
+          <div className="flex flex-col gap-4">
+            <EditorForm
+              ejectedText={ejectedText}
+              impostorText={impostorText}
+              characterFrames={characterFrames}
+              onEjectedTextChange={(value) => {
+                markEdited("ejected");
+                setEjectedText(value);
+              }}
+              onImpostorTextChange={(value) => {
+                markEdited("impostor");
+                setImpostorText(value);
+              }}
+              onCharacterFramesChange={setCharacterFrames}
+            />
+            <DownloadSection props={props} />
+          </div>
         </div>
       </main>
       <Footer />
