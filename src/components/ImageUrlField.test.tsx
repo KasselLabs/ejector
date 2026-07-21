@@ -41,7 +41,7 @@ describe("ImageUrlField", () => {
   it("shows Invalid URL when the image fails to load and the proxy 404s", async () => {
     stubImage(true);
     server.use(
-      http.get("https://cors.kassellabs.io/*", () =>
+      http.get("*/api/proxy-image", () =>
         HttpResponse.text("not found", { status: 404 }),
       ),
     );
@@ -62,7 +62,7 @@ describe("ImageUrlField", () => {
   it("opens the crop dialog for a valid, loadable, CORS-fetchable URL", async () => {
     stubImage(false);
     server.use(
-      http.get("https://cors.kassellabs.io/*", () =>
+      http.get("*/api/proxy-image", () =>
         HttpResponse.text("", {
           status: 200,
           headers: { "Content-Type": "image/png" },

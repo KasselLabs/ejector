@@ -102,7 +102,7 @@ describe("cropImage", () => {
 describe("loadImage CORS handling", () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it("marks the image crossOrigin=anonymous and routes an https source through the CORS proxy", async () => {
+  it("marks the image crossOrigin=anonymous and routes an https source through the same-origin proxy", async () => {
     const created = stubImageCapturing();
 
     await cropImage(
@@ -114,7 +114,7 @@ describe("loadImage CORS handling", () => {
     expect(created).toHaveLength(1);
     expect(created[0].crossOrigin).toBe("anonymous");
     expect(created[0].src).toBe(
-      "https://cors.kassellabs.io/https://example.com/hero.png",
+      "/api/proxy-image?url=https%3A%2F%2Fexample.com%2Fhero.png",
     );
   });
 

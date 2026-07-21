@@ -5,9 +5,9 @@ import { server } from "@/test/msw/server";
 import { decodeGifToCharacterFrames } from "./gifFrames";
 
 const FIXTURE_URL = "http://gif-fixture.test/test.gif";
-// decodeGifToCharacterFrames fetches through getCorsUrl's proxy, so the
-// mock handler has to match the proxied URL, not the raw source URL.
-const PROXIED_FIXTURE_URL = `https://cors.kassellabs.io/${FIXTURE_URL}`;
+// decodeGifToCharacterFrames fetches through getCorsUrl's same-origin proxy,
+// so the mock handler matches `/api/proxy-image?url=<encoded source>`.
+const ENCODED_FIXTURE_URL = encodeURIComponent(FIXTURE_URL);
 
 // Builds a real, tiny animated GIF (2x2px, two frames) so the pipeline
 // under test runs through real gifuct-js decoding rather than mocked
@@ -49,11 +49,10 @@ describe("decodeGifToCharacterFrames", () => {
       bytes.byteOffset + bytes.byteLength,
     ) as ArrayBuffer;
     server.use(
-      // A literal path pattern trips msw's path-to-regexp parser on the
-      // colon in the embedded "http://" segment, so match with a
-      // predicate instead and assert the exact URL inside it.
-      http.get("https://cors.kassellabs.io/*", ({ request }) => {
-        expect(request.url).toBe(PROXIED_FIXTURE_URL);
+      http.get("*/api/proxy-image", ({ request }) => {
+        // The source URL is passed as the encoded `url` query param.
+        expect(new URL(request.url).searchParams.get("url")).toBe(FIXTURE_URL);
+        expect(request.url).toContain(ENCODED_FIXTURE_URL);
         return HttpResponse.arrayBuffer(arrayBuffer, {
           headers: { "Content-Type": "image/gif" },
         });
