@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import { useT } from "@/lib/i18n";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useT, useLocale } from "@/lib/i18n";
 import { staticCharacterFrames } from "@/lib/characterImages";
 import { DEFAULT_CHARACTER_URL } from "@/remotion/EjectorComposition";
 import { trackEvent } from "@/lib/tracking";
@@ -15,8 +15,10 @@ import { useSoundOn } from "@/components/SoundToggle";
 
 export function HomePage() {
   const t = useT();
-  // The translated defaults are captured once, using the locale at mount, so
-  // that later language switches don't clobber text the user may have edited.
+  const { locale } = useLocale();
+  // The translated defaults are captured once with the SSR-safe locale ("en"),
+  // then re-seeded by the effect below once locale detection resolves — but
+  // only while the user hasn't edited yet, so their input is never clobbered.
   const [ejectedText, setEjectedText] = useState(() =>
     t("Red was not The Impostor"),
   );
@@ -29,13 +31,22 @@ export function HomePage() {
   const [soundOn, setSoundOn] = useSoundOn();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Fire ejection_form_text_changed exactly once, on the first text edit.
-  const textEditTracked = useRef(false);
+  // Also fires ejection_form_text_changed exactly once, on the first text edit.
+  const userEditedRef = useRef(false);
   function trackFirstTextEdit() {
-    if (textEditTracked.current) return;
-    textEditTracked.current = true;
+    if (userEditedRef.current) return;
+    userEditedRef.current = true;
     trackEvent("ejection_form_text_changed");
   }
+
+  // Re-seed the translated defaults once locale detection resolves (SSR-safe
+  // first render is always "en"), but only while the user hasn't edited yet so
+  // their input is never clobbered.
+  useEffect(() => {
+    if (userEditedRef.current) return;
+    setEjectedText(t("Red was not The Impostor"));
+    setImpostorText(t("1 Impostor remains"));
+  }, [locale, t]);
 
   const props: EjectorProps = useMemo(
     () => ({

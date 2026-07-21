@@ -26,17 +26,23 @@ function useAmbientAudio(soundOn: boolean) {
       return;
     }
 
-    let cleanup = () => {};
+    // The play() promise may resolve/reject after the effect has been cleaned
+    // up (soundOn flipped or unmount); `cancelled` prevents registering a
+    // listener at that point, and the listener is always removed on cleanup.
+    let cancelled = false;
+    const onGesture = () => {
+      void audio.play().catch(() => {});
+      window.removeEventListener("pointerdown", onGesture);
+    };
     void audio.play().catch(() => {
-      const onGesture = () => {
-        void audio.play().catch(() => {});
-        window.removeEventListener("pointerdown", onGesture);
-      };
+      if (cancelled) return;
       window.addEventListener("pointerdown", onGesture);
-      cleanup = () => window.removeEventListener("pointerdown", onGesture);
     });
 
-    return () => cleanup();
+    return () => {
+      cancelled = true;
+      window.removeEventListener("pointerdown", onGesture);
+    };
   }, [soundOn]);
 
   return audioRef;
