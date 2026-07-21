@@ -44,29 +44,32 @@ export function useFileGeneration(): UseFileGeneration {
       props: EjectorProps,
       tier: PaidTier | null,
     ) => {
+      // Set the guard synchronously, before the first await, so a second
+      // click that lands while checkRenderSupport() is still pending can
+      // never slip through and start a concurrent render.
       if (runningRef.current) return;
-
-      const support = await checkRenderSupport();
-      if (!support.supported) {
-        setError(
-          t(
-            "Video export needs a Chromium-based browser (Chrome, Edge, Brave) or recent Safari. The preview still works everywhere.",
-          ),
-        );
-        return;
-      }
-
       runningRef.current = true;
-      setError(null);
-      setGenerating(kind);
-      setProgress(0);
-      playSound("/task_Inprogress.mp3");
-      trackEvent("download_button_initialize", {
-        event_label: kind,
-        event_category: "download",
-      });
 
       try {
+        const support = await checkRenderSupport();
+        if (!support.supported) {
+          setError(
+            t(
+              "Video export needs a Chromium-based browser (Chrome, Edge, Brave) or recent Safari. The preview still works everywhere.",
+            ),
+          );
+          return;
+        }
+
+        setError(null);
+        setGenerating(kind);
+        setProgress(0);
+        playSound("/task_Inprogress.mp3");
+        trackEvent("download_button_initialize", {
+          event_label: kind,
+          event_category: "download",
+        });
+
         const blob =
           kind === "gif"
             ? await renderEjectionGif({ props, onProgress: setProgress })

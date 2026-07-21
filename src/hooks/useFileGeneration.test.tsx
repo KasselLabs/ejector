@@ -3,12 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { EjectorProps } from "@/types";
 import { staticCharacterFrames } from "@/lib/characterImages";
 import { DEFAULT_CHARACTER_URL } from "@/remotion/EjectorComposition";
+import * as tracking from "@/lib/tracking";
 
 const checkRenderSupport = vi.fn();
 const renderEjectionGif = vi.fn();
 const renderEjectionVideo = vi.fn();
 const downloadBlob = vi.fn();
-const trackEvent = vi.fn();
 
 vi.mock("@/lib/render/capability", () => ({
   checkRenderSupport: (...args: unknown[]) => checkRenderSupport(...args),
@@ -23,9 +23,6 @@ vi.mock("@/lib/render/download", () => ({
   downloadBlob: (...args: unknown[]) => downloadBlob(...args),
   ejectionFilename: (text: string, ext: string) =>
     `${text.replace(/\s+/g, "-")}.${ext}`,
-}));
-vi.mock("@/lib/tracking", () => ({
-  trackEvent: (...args: unknown[]) => trackEvent(...args),
 }));
 
 import { useFileGeneration } from "./useFileGeneration";
@@ -44,7 +41,9 @@ beforeEach(() => {
   renderEjectionGif.mockReset().mockResolvedValue(new Blob(["x"]));
   renderEjectionVideo.mockReset().mockResolvedValue(new Blob(["x"]));
   downloadBlob.mockReset();
-  trackEvent.mockReset();
+  // Spy on the real tracking module (no gtag in jsdom, so it would just
+  // console.log) rather than vi.mock-ing it wholesale, per review feedback.
+  vi.spyOn(tracking, "trackEvent").mockImplementation(() => {});
   vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
 });
 
@@ -66,14 +65,14 @@ describe("useFileGeneration", () => {
       expect.any(Blob),
       "Red-was-ejected.gif",
     );
-    expect(trackEvent).toHaveBeenCalledWith("download_button_initialize", {
-      event_label: "gif",
-      event_category: "download",
-    });
-    expect(trackEvent).toHaveBeenCalledWith("download_button_finish", {
-      event_label: "gif",
-      event_category: "download",
-    });
+    expect(tracking.trackEvent).toHaveBeenCalledWith(
+      "download_button_initialize",
+      { event_label: "gif", event_category: "download" },
+    );
+    expect(tracking.trackEvent).toHaveBeenCalledWith(
+      "download_button_finish",
+      { event_label: "gif", event_category: "download" },
+    );
     expect(result.current.generating).toBeNull();
     expect(result.current.error).toBeNull();
   });
@@ -169,5 +168,37 @@ describe("useFileGeneration", () => {
       result.current.clearError();
     });
     expect(result.current.error).toBeNull();
+  });
+
+  it("guards against a double-click racing the checkRenderSupport probe", async () => {
+    // Delay the capability probe so both calls are in-flight at once before
+    // either resolves — reproduces the race where runningRef.current was
+    // only set to true *after* the await, letting a second click slip
+    // through and start a concurrent render.
+    let resolveSupport!: (value: {
+      supported: boolean;
+      reason: string | null;
+    }) => void;
+    checkRenderSupport.mockReturnValue(
+      new Promise((resolve) => {
+        resolveSupport = resolve;
+      }),
+    );
+
+    const { result } = renderHook(() => useFileGeneration());
+
+    let first!: Promise<void>;
+    let second!: Promise<void>;
+    act(() => {
+      first = result.current.generate("gif", props, null);
+      second = result.current.generate("gif", props, null);
+    });
+
+    await act(async () => {
+      resolveSupport({ supported: true, reason: null });
+      await Promise.all([first, second]);
+    });
+
+    expect(renderEjectionGif).toHaveBeenCalledTimes(1);
   });
 });
