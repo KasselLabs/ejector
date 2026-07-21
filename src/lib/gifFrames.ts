@@ -47,6 +47,9 @@ export async function decodeGifToCharacterFrames(
   canvas.width = gif.lsd.width;
   canvas.height = gif.lsd.height;
   const context = canvas.getContext("2d");
+  /* v8 ignore next 3 -- defensive: every real browser (and the
+   * vitest-canvas-mock stub used in tests) returns a 2d context for a
+   * freshly created canvas; unreachable under test. */
   if (!context) {
     throw new Error("2d canvas context unavailable");
   }
@@ -64,6 +67,8 @@ export async function decodeGifToCharacterFrames(
     patchCanvas.width = dims.width;
     patchCanvas.height = dims.height;
     const patchContext = patchCanvas.getContext("2d");
+    /* v8 ignore next 3 -- defensive: same as the main canvas context
+     * check above; unreachable under test. */
     if (!patchContext) {
       throw new Error("2d canvas context unavailable");
     }

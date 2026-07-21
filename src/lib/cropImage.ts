@@ -46,6 +46,9 @@ export async function cropImage(
   const image = await loadImage(srcDataUrl);
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
+  /* v8 ignore next 3 -- defensive: every real browser (and the
+   * vitest-canvas-mock stub used in tests) returns a 2d context for a
+   * freshly created canvas; unreachable under test. */
   if (!context) {
     throw new Error("2d canvas context unavailable");
   }

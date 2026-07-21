@@ -47,9 +47,18 @@ test("paid user skips the dialog and starts generating", async ({ page }) => {
   // character sprite — retries for a few seconds and then surfaces the
   // generic ErrorDialog. Either one proves the payment gate opened (the
   // PaymentDialog/iframe never rendered); assert on whichever appears.
+  // The error path is targeted via the dialog's heading role rather than
+  // getByText: useFileGeneration's catch-all sets the error message to the
+  // same generic string ErrorDialog uses as its title, so a plain text
+  // locator matches both the title and the description and violates
+  // Playwright's strict mode.
   await expect(
     page
       .getByRole("progressbar")
-      .or(page.getByText("Something went wrong. Please try again.")),
+      .or(
+        page.getByRole("heading", {
+          name: "Something went wrong. Please try again.",
+        }),
+      ),
   ).toBeVisible({ timeout: 30_000 });
 });

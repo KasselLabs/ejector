@@ -42,4 +42,24 @@ describe("characterFrameAt", () => {
     const s = staticCharacterFrames("/red.png");
     expect(characterFrameAt(s, 5.4).imageUrl).toBe("/red.png");
   });
+
+  it("treats a non-positive duration as t=0 rather than looping", () => {
+    const zeroDuration: CharacterFrames = {
+      durationSeconds: 0,
+      frames: [{ imageUrl: "only.png", startSeconds: 0, endSeconds: 0 }],
+    };
+    expect(characterFrameAt(zeroDuration, 7).imageUrl).toBe("only.png");
+  });
+
+  it("falls back to the first frame when no range contains the looped time", () => {
+    const gapped: CharacterFrames = {
+      durationSeconds: 1,
+      // A gap between 0.1 and 1 means t=0.5 matches no frame.
+      frames: [
+        { imageUrl: "a.png", startSeconds: 0, endSeconds: 0.1 },
+        { imageUrl: "b.png", startSeconds: 0.9, endSeconds: 1 },
+      ],
+    };
+    expect(characterFrameAt(gapped, 0.5).imageUrl).toBe("a.png");
+  });
 });

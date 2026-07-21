@@ -62,6 +62,34 @@ describe("registerPaymentEventsHandler", () => {
     expect(cb).not.toHaveBeenCalled();
   });
 
+  it("does not fire the callback when the message data is not an object", () => {
+    const cb = vi.fn();
+    registerPaymentEventsHandler(cb);
+
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: "not an object",
+        origin: ALLOWED_ORIGIN,
+      }),
+    );
+
+    expect(cb).not.toHaveBeenCalled();
+  });
+
+  it("does not fire the callback for a non-success payment action", () => {
+    const cb = vi.fn();
+    registerPaymentEventsHandler(cb);
+
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: { type: "payment", action: "cancelled", payload },
+        origin: ALLOWED_ORIGIN,
+      }),
+    );
+
+    expect(cb).not.toHaveBeenCalled();
+  });
+
   it("does not fire the callback after unregister", () => {
     const cb = vi.fn();
     registerPaymentEventsHandler(cb);

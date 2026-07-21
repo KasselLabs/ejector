@@ -50,6 +50,46 @@ function colorHexAtIndex(imageData: ImageData, index: number): string {
   return color.toHexString();
 }
 
+export interface RgbColor {
+  r: number;
+  g: number;
+  b: number;
+}
+
+/**
+ * Pure per-pixel step of the color-substitution loop, split out from
+ * `generateColoredCharacter` so it can be unit-tested against a plain
+ * `Uint8ClampedArray` (no canvas/ImageData needed): canvas mocks used in
+ * jsdom tests return zeroed pixel data, so the substitution branches
+ * below are otherwise unreachable under test.
+ */
+export function substitutePixelColor(
+  data: Uint8ClampedArray,
+  index: number,
+  referenceRedHex: string,
+  referenceDarkRedHex: string,
+  targetColor: RgbColor,
+  targetDarkColor: RgbColor,
+): void {
+  const pixelColor = tinycolor({
+    r: data[index],
+    g: data[index + 1],
+    b: data[index + 2],
+    a: data[index + 3] / 255,
+  });
+  const colorHex = pixelColor.toHexString();
+
+  if (colorHex === referenceRedHex) {
+    data[index] = targetColor.r;
+    data[index + 1] = targetColor.g;
+    data[index + 2] = targetColor.b;
+  } else if (colorHex === referenceDarkRedHex) {
+    data[index] = targetDarkColor.r;
+    data[index + 1] = targetDarkColor.g;
+    data[index + 2] = targetDarkColor.b;
+  }
+}
+
 /**
  * Direct port of the legacy `getColorChangedImage`: loads the red
  * reference sprite, finds every pixel matching the reference body-red and
@@ -66,6 +106,10 @@ export async function generateColoredCharacter(
   canvas.height = characterImage.height;
 
   const context = canvas.getContext("2d");
+  /* v8 ignore next 3 -- defensive: every real browser (and the
+   * vitest-canvas-mock stub used in tests) returns a 2d context for a
+   * freshly created canvas; unreachable outside a hypothetical resource
+   * exhaustion case, which can't be simulated under test. */
   if (!context) {
     throw new Error("2d canvas context unavailable");
   }
@@ -83,22 +127,14 @@ export async function generateColoredCharacter(
   const colorDarkRed = colorHexAtIndex(imageData, SHADE_RED_OFFSET);
 
   for (let i = 0; i < imageData.data.length; i += 4) {
-    const red = imageData.data[i];
-    const green = imageData.data[i + 1];
-    const blue = imageData.data[i + 2];
-    const alpha = imageData.data[i + 3];
-    const pixelColor = tinycolor({ r: red, g: green, b: blue, a: alpha / 255 });
-    const colorHex = pixelColor.toHexString();
-
-    if (colorHex === colorRed) {
-      imageData.data[i] = parsedColorRGBA.r;
-      imageData.data[i + 1] = parsedColorRGBA.g;
-      imageData.data[i + 2] = parsedColorRGBA.b;
-    } else if (colorHex === colorDarkRed) {
-      imageData.data[i] = darkParsedColorRGBA.r;
-      imageData.data[i + 1] = darkParsedColorRGBA.g;
-      imageData.data[i + 2] = darkParsedColorRGBA.b;
-    }
+    substitutePixelColor(
+      imageData.data,
+      i,
+      colorRed,
+      colorDarkRed,
+      parsedColorRGBA,
+      darkParsedColorRGBA,
+    );
   }
 
   context.putImageData(imageData, 0, 0);

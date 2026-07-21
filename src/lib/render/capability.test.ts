@@ -48,4 +48,10 @@ describe("checkRenderSupport", () => {
     const result = await checkRenderSupport();
     expect(result).toEqual({ supported: false, reason: "boom" });
   });
+
+  it("reports a generic reason when the thrown value isn't an Error", async () => {
+    canRenderMediaOnWeb.mockRejectedValue("boom");
+    const result = await checkRenderSupport();
+    expect(result).toEqual({ supported: false, reason: "Unknown error" });
+  });
 });
