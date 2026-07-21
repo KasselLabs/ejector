@@ -11,6 +11,7 @@ import { Footer } from "@/components/Footer";
 import { PlayerPreview } from "@/components/PlayerPreview";
 import { EditorForm } from "@/components/EditorForm";
 import { DownloadSection } from "@/components/DownloadSection";
+import { SubscribeForm } from "@/components/SubscribeForm";
 import { ErrorDialog } from "@/components/ErrorDialog";
 import { useSoundOn } from "@/components/SoundToggle";
 
@@ -92,6 +93,9 @@ export function HomePage() {
             />
             <DownloadSection props={props} />
           </div>
+        </div>
+        <div className="mt-6">
+          <SubscribeForm />
         </div>
       </main>
       <Footer />
