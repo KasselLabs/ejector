@@ -131,7 +131,7 @@ export function PaymentDialog({
         if (!next) handleClose();
       }}
     >
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="border border-white bg-black text-white sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t("Choose your video quality")}</DialogTitle>
           <DialogDescription>

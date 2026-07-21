@@ -15,18 +15,16 @@ function renderForm() {
 }
 
 describe("SubscribeForm", () => {
-  it("renders the available-soon copy and email form", () => {
+  it("renders the choose-your-map panel and email form", () => {
     renderForm();
-    expect(screen.getByText("Available Soon!")).toBeInTheDocument();
+    expect(screen.getByText("Choose your map")).toBeInTheDocument();
+    expect(screen.getByLabelText("Your Email")).toBeInTheDocument();
     expect(
-      screen.getByLabelText("Your email", { exact: false }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Subscribe" }),
+      screen.getByRole("button", { name: "Notify Me" }),
     ).toBeInTheDocument();
   });
 
-  it("swaps to the thank-you message on successful subscription", async () => {
+  it("shows the thank-you toast on successful subscription", async () => {
     server.use(
       http.post("*/graphql", () =>
         HttpResponse.json({ data: { subscribeNewsletter: { id: "1" } } }),
@@ -35,20 +33,18 @@ describe("SubscribeForm", () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.type(
-      screen.getByLabelText("Your email", { exact: false }),
-      "test@example.com",
-    );
-    await user.click(screen.getByRole("button", { name: "Subscribe" }));
+    await user.type(screen.getByLabelText("Your Email"), "test@example.com");
+    await user.click(screen.getByRole("button", { name: "Notify Me" }));
 
     expect(
       await screen.findByText(
         "Thanks! We'll notify you as soon as it is ready! 🚀",
       ),
     ).toBeInTheDocument();
+    // The form stays usable after a successful subscribe.
     expect(
-      screen.queryByRole("button", { name: "Subscribe" }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("button", { name: "Notify Me" }),
+    ).toBeInTheDocument();
   });
 
   it("shows an inline error message when the request fails", async () => {
@@ -60,18 +56,15 @@ describe("SubscribeForm", () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.type(
-      screen.getByLabelText("Your email", { exact: false }),
-      "test@example.com",
-    );
-    await user.click(screen.getByRole("button", { name: "Subscribe" }));
+    await user.type(screen.getByLabelText("Your Email"), "test@example.com");
+    await user.click(screen.getByRole("button", { name: "Notify Me" }));
 
     expect(
       await screen.findByText("Something went wrong. Please try again."),
     ).toBeInTheDocument();
     // The form is still usable after a failure.
     expect(
-      screen.getByRole("button", { name: "Subscribe" }),
+      screen.getByRole("button", { name: "Notify Me" }),
     ).toBeInTheDocument();
   });
 
@@ -88,12 +81,11 @@ describe("SubscribeForm", () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.type(
-      screen.getByLabelText("Your email", { exact: false }),
-      "test@example.com",
-    );
-    await user.click(screen.getByRole("button", { name: "Subscribe" }));
+    await user.type(screen.getByLabelText("Your Email"), "test@example.com");
+    await user.click(screen.getByRole("button", { name: "Notify Me" }));
 
-    expect(screen.getByRole("button", { name: "Subscribe" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Loading" }),
+    ).toBeDisabled();
   });
 });
