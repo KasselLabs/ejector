@@ -83,7 +83,7 @@ export function SubscribeForm() {
     <>
       <form
         onSubmit={handleSubmit}
-        className="z-30 max-w-[280px] rounded-[10px] border-[3px] border-solid border-white lg:fixed lg:left-4 lg:top-4 max-lg:mb-2 max-lg:w-full max-lg:max-w-none"
+        className="z-30 max-w-[280px] rounded-[10px] border-[3px] border-solid border-white lg:fixed lg:left-4 lg:top-[66px] max-lg:mb-2 max-lg:w-full max-lg:max-w-none"
       >
         <div className="relative p-4">
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black px-2 text-[1.1em] font-bold text-white">
