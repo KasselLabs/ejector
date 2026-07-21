@@ -121,10 +121,14 @@ describe("HomePage", () => {
     await user.clear(input);
     await user.type(input, "Blue was ejected");
     await user.click(screen.getByRole("button", { name: "PT-BR" }));
-    // The label localizes to pt-BR, but the user's text must survive the switch.
+    // The edited field keeps the user's text, but the untouched impostor field
+    // still re-seeds to its pt-BR default (per-field edit tracking).
     expect(screen.getByDisplayValue("Blue was ejected")).toBeInTheDocument();
     expect(
       screen.queryByDisplayValue("Vermelho não era o Impostor"),
     ).not.toBeInTheDocument();
+    expect(
+      await screen.findByDisplayValue("1 Impostor sobrando"),
+    ).toBeInTheDocument();
   });
 });

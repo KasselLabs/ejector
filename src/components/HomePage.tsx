@@ -31,21 +31,29 @@ export function HomePage() {
   const [soundOn, setSoundOn] = useSoundOn();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Also fires ejection_form_text_changed exactly once, on the first text edit.
-  const userEditedRef = useRef(false);
-  function trackFirstTextEdit() {
-    if (userEditedRef.current) return;
-    userEditedRef.current = true;
+  // Per-field edit tracking: each field freezes its own locale re-seed once the
+  // user touches it, so editing one field never freezes the other. The
+  // ejection_form_text_changed event still fires exactly once, on the first
+  // edit of either field.
+  const editedFieldsRef = useRef({ ejected: false, impostor: false });
+  const textChangeTrackedRef = useRef(false);
+  function markEdited(field: "ejected" | "impostor") {
+    editedFieldsRef.current[field] = true;
+    if (textChangeTrackedRef.current) return;
+    textChangeTrackedRef.current = true;
     trackEvent("ejection_form_text_changed");
   }
 
   // Re-seed the translated defaults once locale detection resolves (SSR-safe
-  // first render is always "en"), but only while the user hasn't edited yet so
-  // their input is never clobbered.
+  // first render is always "en"), re-seeding each field independently while it
+  // remains untouched so a user's edits are never clobbered.
   useEffect(() => {
-    if (userEditedRef.current) return;
-    setEjectedText(t("Red was not The Impostor"));
-    setImpostorText(t("1 Impostor remains"));
+    if (!editedFieldsRef.current.ejected) {
+      setEjectedText(t("Red was not The Impostor"));
+    }
+    if (!editedFieldsRef.current.impostor) {
+      setImpostorText(t("1 Impostor remains"));
+    }
   }, [locale, t]);
 
   const props: EjectorProps = useMemo(
@@ -71,11 +79,11 @@ export function HomePage() {
             impostorText={impostorText}
             characterFrames={characterFrames}
             onEjectedTextChange={(value) => {
-              trackFirstTextEdit();
+              markEdited("ejected");
               setEjectedText(value);
             }}
             onImpostorTextChange={(value) => {
-              trackFirstTextEdit();
+              markEdited("impostor");
               setImpostorText(value);
             }}
             onCharacterFramesChange={setCharacterFrames}
