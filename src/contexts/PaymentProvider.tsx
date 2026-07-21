@@ -37,10 +37,11 @@ export function PaymentProvider({ children }: { children: React.ReactNode }) {
   const [tier, setTier] = useState<PaidTier | null>(null);
   const [code, setCode] = useState<string | null>(null);
 
+  // All setState calls must occur after the await to satisfy react-hooks/set-state-in-effect.
   const refresh = useCallback(async () => {
     const clientCode = getClientCode();
-    setCode(clientCode);
     const status = await fetchPaidStatus(clientCode);
+    setCode(clientCode);
     if (status.paid) {
       setPaid(true);
       setTier(tierForDollarValue(status.dollarValue));
@@ -48,17 +49,8 @@ export function PaymentProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const initPayment = async () => {
-      const clientCode = getClientCode();
-      setCode(clientCode);
-      const status = await fetchPaidStatus(clientCode);
-      if (status.paid) {
-        setPaid(true);
-        setTier(tierForDollarValue(status.dollarValue));
-      }
-    };
-    void initPayment();
-  }, []);
+    void refresh();
+  }, [refresh]);
 
   const markPaid = useCallback((finalAmountCents: number) => {
     setPaid(true);
