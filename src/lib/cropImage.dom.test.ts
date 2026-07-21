@@ -42,6 +42,31 @@ function stubImage() {
   vi.stubGlobal("Image", MockImage);
 }
 
+// Same stub as `stubImage`, but also returns every `Image` instance
+// `loadImage` constructs so tests can inspect what got set on it
+// (`crossOrigin`, `src`) rather than just whether the crop resolved.
+function stubImageCapturing(): HTMLImageElement[] {
+  const created: HTMLImageElement[] = [];
+  class MockImage {
+    constructor() {
+      const img = document.createElement("img");
+      img.width = 100;
+      img.height = 100;
+      Object.defineProperty(img, "src", {
+        configurable: true,
+        set(value: string) {
+          Object.defineProperty(img, "src", { configurable: true, value });
+          queueMicrotask(() => img.onload?.(new Event("load")));
+        },
+      });
+      created.push(img);
+      return img;
+    }
+  }
+  vi.stubGlobal("Image", MockImage);
+  return created;
+}
+
 describe("cropImage", () => {
   beforeEach(stubImage);
   afterEach(() => vi.unstubAllGlobals());
@@ -64,6 +89,46 @@ describe("cropImage", () => {
         45,
       ),
     ).resolves.toMatch(/^data:image\/png/);
+  });
+});
+
+// Regression: loadImage() previously assigned `image.src = src` directly,
+// with no `crossOrigin` and no CORS proxy. For real (non-data:) URLs --
+// ImageUrlField's primary flow -- that taints the canvas, and
+// getImageData()/toDataURL() throw a SecurityError in every real browser
+// (jsdom doesn't enforce this, so the bug passed silently under the
+// original tests above). Fixed by setting `crossOrigin = "anonymous"`
+// before assigning `src`, and routing `src` through `getCorsUrl`.
+describe("loadImage CORS handling", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("marks the image crossOrigin=anonymous and routes an https source through the CORS proxy", async () => {
+    const created = stubImageCapturing();
+
+    await cropImage(
+      "https://example.com/hero.png",
+      { x: 0, y: 0, width: 50, height: 50 },
+      0,
+    );
+
+    expect(created).toHaveLength(1);
+    expect(created[0].crossOrigin).toBe("anonymous");
+    expect(created[0].src).toBe(
+      "https://cors.kassellabs.io/https://example.com/hero.png",
+    );
+  });
+
+  it("still marks crossOrigin=anonymous but leaves a data: source unchanged", async () => {
+    const created = stubImageCapturing();
+
+    await cropImage(
+      "data:image/png;base64,xx",
+      { x: 0, y: 0, width: 50, height: 50 },
+      0,
+    );
+
+    expect(created[0].crossOrigin).toBe("anonymous");
+    expect(created[0].src).toBe("data:image/png;base64,xx");
   });
 });
 

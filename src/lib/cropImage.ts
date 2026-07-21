@@ -1,4 +1,5 @@
 import { staticCharacterFrames } from "@/lib/characterImages";
+import { getCorsUrl } from "@/lib/corsUrl";
 import { decodeGifToCharacterFrames, isGifSource } from "@/lib/gifFrames";
 import type { CharacterFrames } from "@/types";
 
@@ -13,12 +14,21 @@ function getRadianAngle(degreeValue: number): number {
   return (degreeValue * Math.PI) / 180;
 }
 
+// Loading through the CORS proxy without `crossOrigin` set taints the
+// canvas: `getImageData`/`toDataURL` then throw a SecurityError in every
+// real browser (jsdom doesn't enforce this, so it was easy to miss under
+// test). `crossOrigin` must be set *before* `src` is assigned -- setting
+// it after the browser has already started the fetch has no effect. Port
+// of legacy `getCORSImage.js`. `getCorsUrl` passes data:/blob:/relative
+// URLs through unchanged, so this is also safe for the UploadArea
+// data-URL path and the GIF-frame data URLs from `decodeGifToCharacterFrames`.
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
+    image.crossOrigin = "anonymous";
     image.onload = () => resolve(image);
     image.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-    image.src = src;
+    image.src = getCorsUrl(src);
   });
 }
 
