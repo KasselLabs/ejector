@@ -12,6 +12,17 @@ function renderAbout() {
 }
 
 describe("AboutSection", () => {
+  it("is collapsed by default but still ships the copy in the HTML", () => {
+    const { container } = renderAbout();
+    const details = container.querySelector("details");
+    expect(details).not.toBeNull();
+    // Collapsed for readers...
+    expect(details).not.toHaveAttribute("open");
+    // ...but present for crawlers, which is the whole point of <details>
+    // over conditionally rendering the block.
+    expect(details?.textContent).toContain("The GIF download is free forever");
+  });
+
   it("renders the section heading", () => {
     renderAbout();
     expect(
