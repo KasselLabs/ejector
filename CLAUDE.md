@@ -24,6 +24,15 @@
   check out that tag rather than guessing.
 - **i18n**: en + pt-BR dictionaries in `src/locales/`, keys are English
   strings, `useT()` from `src/lib/i18n.tsx`.
+- **SEO**: `src/app/robots.ts` (allows all crawlers, AI crawlers included)
+  and `src/app/sitemap.ts` (homepage only — `/unsubscribe` is `noindex`).
+  Favicons/apple-icon come from the App Router file conventions in
+  `src/app/` — never re-add a manual `icons` entry to the metadata.
+  JSON-LD (`WebApplication` + Kassel Labs `Organization`) is inlined as the
+  first child of `<body>` in `src/app/layout.tsx`; its offer prices must stay
+  in sync with the real tiers. `AboutSection.tsx` carries the indexable
+  on-page copy. `next.config.ts` sets baseline security headers but
+  **deliberately allows framing** (third parties iframe the creators).
 
 ## Local env: `.env.test` → `.env.local` seeding
 

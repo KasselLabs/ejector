@@ -6,6 +6,7 @@ import { staticCharacterFrames } from "@/lib/characterImages";
 import { DEFAULT_CHARACTER_URL } from "@/remotion/EjectorComposition";
 import { trackEvent } from "@/lib/tracking";
 import type { CharacterFrames, EjectorProps } from "@/types";
+import { AboutSection } from "@/components/AboutSection";
 import { Footer } from "@/components/Footer";
 import { PlayerPreview } from "@/components/PlayerPreview";
 import { EditorForm } from "@/components/EditorForm";
@@ -94,6 +95,7 @@ export function HomePage() {
           <DownloadSection props={props} />
         </div>
         <PlayerPreview props={props} soundOn={soundOn} />
+        <AboutSection />
         <Footer />
       </div>
       <ErrorDialog

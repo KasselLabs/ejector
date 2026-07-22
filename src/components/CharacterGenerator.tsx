@@ -54,7 +54,8 @@ export function CharacterGenerator({
                 aria-label={color.value}
                 onClick={() => void handleSelect(color)}
                 className={cn(
-                  "h-[38px] w-[38px] cursor-pointer rounded-md",
+                  // 44px: the mobile tap-target guideline minimum.
+                  "size-11 cursor-pointer rounded-md",
                   isSelected && "ring-2 ring-white ring-offset-2 ring-offset-black",
                 )}
                 style={{ background: color.value }}

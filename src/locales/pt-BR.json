@@ -67,5 +67,18 @@
   "You have been unsubscribed": "Você foi desinscrito",
   "Something went wrong. Please try again.": "Algo deu errado. Por favor, tente novamente.",
   "US$ 3": "US$ 3",
-  "US$ 5": "US$ 5"
+  "US$ 5": "US$ 5",
+  "Make Your Own Ejection GIF or Video": "Crie seu próprio GIF ou vídeo de ejeção",
+  "Type a name, pick or upload a crewmate, and watch them get voted off in the classic Among Us ejection animation — cape, spin, and all. The ejection text can say anything you want. Swap the stock crewmate color for your own image or GIF if you'd rather eject a face, a logo, or a friend.": "Digite um nome, escolha ou envie um tripulante e veja ele ser expulso na clássica animação de ejeção do Among Us — com capa, giro e tudo mais. O texto de ejeção pode dizer o que você quiser. Troque a cor padrão do tripulante pela sua própria imagem ou GIF se preferir ejetar um rosto, uma logo ou um amigo.",
+  "How It Works": "Como funciona",
+  "Pick a crewmate color or upload your own image. Edit the ejection text and the impostor-remain line. Preview the animation, then download.": "Escolha a cor do tripulante ou envie a sua própria imagem. Edite o texto de ejeção e a linha de impostores restantes. Veja a prévia da animação e depois baixe.",
+  "Free GIF vs. Paid Video": "GIF grátis x vídeo pago",
+  "The GIF download is free forever, with a small watermark. Want it clean for a stream, a Discord clip, or a short? A 720p MP4 with watermark is $3, and a watermark-free 1080p MP4 is $5. No account needed — pay once, download for 24 hours.": "O download do GIF é grátis para sempre, com uma pequena marca d'água. Quer ele limpo para uma live, um clipe no Discord ou um short? O MP4 em 720p com marca d'água custa US$ 3, e o MP4 em 1080p sem marca d'água custa US$ 5. Não precisa de conta — pague uma vez e baixe durante 24 horas.",
+  "FAQ": "Perguntas frequentes",
+  "Can I use any crewmate color?": "Posso usar qualquer cor de tripulante?",
+  "Yes — every standard Among Us color is here, plus custom image uploads.": "Sim — todas as cores padrão do Among Us estão aqui, além do envio de imagens personalizadas.",
+  "Does this render on your servers?": "A renderização acontece nos seus servidores?",
+  "No — Ejector renders everything in your browser, so nothing you type or upload is ever stored by us.": "Não — o Ejetor renderiza tudo no seu navegador, então nada do que você digita ou envia é armazenado por nós.",
+  "Can I use this for streams or YouTube?": "Posso usar isso em lives ou no YouTube?",
+  "That's exactly what the paid video tiers are for.": "É exatamente para isso que servem as opções de vídeo pagas."
 }

@@ -67,5 +67,18 @@
   "You have been unsubscribed": "You have been unsubscribed",
   "Something went wrong. Please try again.": "Something went wrong. Please try again.",
   "US$ 3": "US$ 3",
-  "US$ 5": "US$ 5"
+  "US$ 5": "US$ 5",
+  "Make Your Own Ejection GIF or Video": "Make Your Own Ejection GIF or Video",
+  "Type a name, pick or upload a crewmate, and watch them get voted off in the classic Among Us ejection animation — cape, spin, and all. The ejection text can say anything you want. Swap the stock crewmate color for your own image or GIF if you'd rather eject a face, a logo, or a friend.": "Type a name, pick or upload a crewmate, and watch them get voted off in the classic Among Us ejection animation — cape, spin, and all. The ejection text can say anything you want. Swap the stock crewmate color for your own image or GIF if you'd rather eject a face, a logo, or a friend.",
+  "How It Works": "How It Works",
+  "Pick a crewmate color or upload your own image. Edit the ejection text and the impostor-remain line. Preview the animation, then download.": "Pick a crewmate color or upload your own image. Edit the ejection text and the impostor-remain line. Preview the animation, then download.",
+  "Free GIF vs. Paid Video": "Free GIF vs. Paid Video",
+  "The GIF download is free forever, with a small watermark. Want it clean for a stream, a Discord clip, or a short? A 720p MP4 with watermark is $3, and a watermark-free 1080p MP4 is $5. No account needed — pay once, download for 24 hours.": "The GIF download is free forever, with a small watermark. Want it clean for a stream, a Discord clip, or a short? A 720p MP4 with watermark is $3, and a watermark-free 1080p MP4 is $5. No account needed — pay once, download for 24 hours.",
+  "FAQ": "FAQ",
+  "Can I use any crewmate color?": "Can I use any crewmate color?",
+  "Yes — every standard Among Us color is here, plus custom image uploads.": "Yes — every standard Among Us color is here, plus custom image uploads.",
+  "Does this render on your servers?": "Does this render on your servers?",
+  "No — Ejector renders everything in your browser, so nothing you type or upload is ever stored by us.": "No — Ejector renders everything in your browser, so nothing you type or upload is ever stored by us.",
+  "Can I use this for streams or YouTube?": "Can I use this for streams or YouTube?",
+  "That's exactly what the paid video tiers are for.": "That's exactly what the paid video tiers are for."
 }

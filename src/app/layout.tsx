@@ -13,30 +13,96 @@ const roboto = Roboto({
   display: "swap",
 });
 
+const SITE_URL = "https://ejector.kassellabs.io";
+
+const DESCRIPTION =
+  "Create your own Among Us ejection animation. Type the ejection text, pick a crewmate colour or upload your own image, then download a free GIF or an HD video.";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://ejector.kassellabs.io"),
+  metadataBase: new URL(SITE_URL),
   title: "Ejector - Eject Someone",
-  description: "Create an Among Us ejection animation for fun!",
-  icons: { icon: ["/favicon.ico", "/favicon.png"] },
+  description: DESCRIPTION,
+  alternates: { canonical: "/" },
+  // Icons come from the App Router file conventions (src/app/favicon.ico,
+  // icon.png, apple-icon.png) -- no manual `icons` entry needed.
   openGraph: {
     type: "website",
     title: "Ejector",
-    description: "Create an Among Us ejection animation for fun!",
-    url: "https://ejector.kassellabs.io",
+    description: DESCRIPTION,
+    url: SITE_URL,
     images: [
       {
-        url: "https://ejector.kassellabs.io/og-image.png",
-        width: 200,
-        height: 200,
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Ejector — create your own Among Us ejection animation",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Ejector",
-    description: "Create an Among Us ejection animation for fun!",
-    images: ["https://ejector.kassellabs.io/twitter-card.png"],
+    description: DESCRIPTION,
+    images: ["/og-image.png"],
   },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "@id": `${SITE_URL}/#webapplication`,
+      name: "Ejector",
+      alternateName: "Ejector - Eject Someone",
+      description: DESCRIPTION,
+      url: `${SITE_URL}/`,
+      applicationCategory: "MultimediaApplication",
+      operatingSystem: "Web browser",
+      image: `${SITE_URL}/og-image.png`,
+      inLanguage: ["en", "pt-BR"],
+      offers: [
+        {
+          "@type": "Offer",
+          name: "Free GIF export (watermarked)",
+          price: "0.00",
+          priceCurrency: "USD",
+        },
+        {
+          "@type": "Offer",
+          name: "HD MP4 export (1280x720, watermarked)",
+          price: "3.00",
+          priceCurrency: "USD",
+        },
+        {
+          "@type": "Offer",
+          name: "Full HD MP4 export (1920x1080, no watermark)",
+          price: "5.00",
+          priceCurrency: "USD",
+        },
+      ],
+      publisher: { "@id": "https://kassellabs.io/#organization" },
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://kassellabs.io/#organization",
+      name: "Kassel Labs",
+      url: "https://kassellabs.io",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://kassellabs.io/images/icons/icon-512x512.png",
+      },
+      sameAs: [
+        "https://www.instagram.com/kassellabs",
+        "https://www.facebook.com/KasselLabs/",
+        "https://www.tiktok.com/@kassellabs",
+        "https://x.com/KasselLabs",
+        "https://www.youtube.com/@KasselLabsVideos",
+        "https://github.com/KasselLabs",
+        "https://www.linkedin.com/company/kassellabs",
+      ],
+    },
+  ],
 };
 
 export default function RootLayout({
@@ -45,6 +111,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={roboto.variable}>
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         {gaId && (
           <>
             <Script
