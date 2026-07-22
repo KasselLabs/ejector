@@ -34,6 +34,36 @@
   on-page copy. `next.config.ts` sets baseline security headers but
   **deliberately allows framing** (third parties iframe the creators).
 
+## Loading behaviour (Core Web Vitals)
+
+Everything heavy is deferred; keep it that way when touching these files:
+
+- `PlayerPreview.tsx` loads the Remotion player through
+  `next/dynamic(() => import("./RemotionPlayer"), { ssr: false })`, showing
+  `/among-us-background-images/153.png` at the composition's 16:9 aspect as a
+  poster while the chunk loads. `RemotionPlayer.tsx` owns the `PlayerRef`
+  mute-sync. Deferring the player also defers the composition's own assets
+  (`among-us-background.mp4`, `ejected.mp3`).
+- The ambient `<audio>` is `preload="none"` and only attempts `play()` when
+  `navigator.userActivation.hasBeenActive` — otherwise it waits for the first
+  `pointerdown`, so `background.mp3` is never fetched before it can be heard.
+- `CreatorGrid.tsx` ("use client", fed by the `MoreCreators` Server Component)
+  ships the preview `<video>`s with `preload="none"` and the clip URL in
+  `data-src`; one IntersectionObserver (`rootMargin: 200px`) attaches the
+  source and starts the silent loop as cards approach the viewport. The links
+  and labels must stay in the SSR HTML — that is what makes them crawlable.
+- Images use `next/image` with intrinsic `width`/`height` (map thumbnails in
+  `SubscribeForm.tsx`); only the hero candidate should ever get `priority`.
+  React auto-preloads plain eager `<img>`s at high priority, which is why the
+  38px map thumbnails used to be preloaded at full size.
+- gtag/GTM `<Script>`s are `strategy="lazyOnload"`.
+
+Caveat measured locally (`npm run build && npx next start`, Lighthouse mobile,
+simulated throttling): the player deferral does not improve the *simulated*
+LCP — it makes it worse (~2.9s → ~4.0s) because the chunk is discovered after
+hydration, while the *observed* paint is unchanged (~70ms) and Speed Index
+improves. Re-measure before assuming a change here helped.
+
 ## Local env: `.env.test` → `.env.local` seeding
 
 Playwright's `webServer` (`playwright.config.ts`) runs `next dev`, which

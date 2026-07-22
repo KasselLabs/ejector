@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useT, useLocale } from "@/lib/i18n";
 import { subscribeNewsletter } from "@/lib/newsletter";
 import { trackEvent } from "@/lib/tracking";
@@ -10,21 +11,30 @@ import { Button } from "@/components/ui/button";
 
 function MapImage({
   src,
+  width,
+  height,
   href,
   available,
 }: {
   src: string;
+  /** Intrinsic pixel size, so next/image can emit a correctly resized file. */
+  width: number;
+  height: number;
   href?: string;
   available?: boolean;
 }) {
   const t = useT();
   const content = (
     <span className="relative m-2 flex min-w-[175px] justify-center">
-      {/* eslint-disable-next-line @next/next/no-img-element -- static map thumbnail */}
-      <img
+      {/* Rendered 38px tall; next/image serves a resized WebP/AVIF instead of
+          the full-size PNG. Deliberately not `priority` — only the LCP
+          candidate should get a high-priority preload. */}
+      <Image
         src={src}
         alt=""
-        height={38}
+        width={width}
+        height={height}
+        style={{ height: 38, width: "auto" }}
         className={available ? "" : "opacity-30"}
       />
       {!available && (
@@ -90,9 +100,15 @@ export function SubscribeForm() {
             {t("Choose your map")}
           </div>
           <div className="pb-2 max-lg:flex max-lg:flex-row max-lg:flex-wrap max-lg:justify-evenly">
-            <MapImage src="/images/skeld.png" href="/" available />
-            <MapImage src="/images/mirahq.png" />
-            <MapImage src="/images/polus.png" />
+            <MapImage
+              src="/images/skeld.png"
+              width={282}
+              height={62}
+              href="/"
+              available
+            />
+            <MapImage src="/images/mirahq.png" width={283} height={62} />
+            <MapImage src="/images/polus.png" width={198} height={64} />
           </div>
           <p className="pb-1 text-center text-white">
             {t(

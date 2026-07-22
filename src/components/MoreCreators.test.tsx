@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MoreCreators } from "./MoreCreators";
 import {
@@ -33,7 +33,7 @@ describe("MoreCreators", () => {
     ]);
   });
 
-  it("renders a looping preview video for each creator that has a video URL", () => {
+  it("renders a lazy looping preview video for each creator that has a video URL", () => {
     const creators: IntroCreatorLink[] = [
       { slug: "star-wars", label: "Star Wars Intro", href: "https://starwarsintrocreator.kassellabs.io", video: "https://cdn.example/sw.mp4" },
       { slug: "westworld", label: "Westworld Intro", href: "https://westworldintrocreator.kassellabs.io", video: "https://cdn.example/ww.mp4" },
@@ -43,18 +43,85 @@ describe("MoreCreators", () => {
     // Exactly one <video> per creator that has a video URL (2 out of 3).
     expect(container.querySelectorAll("video").length).toBe(2);
     for (const creator of creators.filter((c) => c.video)) {
-      const source = container.querySelector(
-        `video source[src="${creator.video}"]`,
+      const video = container.querySelector<HTMLVideoElement>(
+        `video[data-src="${creator.video}"]`,
       );
-      expect(source).not.toBeNull();
-      const video = source!.closest("video") as HTMLVideoElement;
+      expect(video).not.toBeNull();
       // Decorative autoplay loop, muted. React sets `muted` as a property,
       // not a reflected attribute — assert the property.
-      expect(video.loop).toBe(true);
-      expect(video.muted).toBe(true);
-      expect(video.autoplay).toBe(true);
-      expect(source!.closest("a")).toHaveAttribute("href", creator.href);
+      expect(video!.loop).toBe(true);
+      expect(video!.muted).toBe(true);
+      expect(video!.autoplay).toBe(true);
+      // Lazy: nothing is fetched until the card nears the viewport.
+      expect(video!.getAttribute("preload")).toBe("none");
+      expect(video!.querySelector("source")).toBeNull();
+      expect(video!.closest("a")).toHaveAttribute("href", creator.href);
     }
+  });
+
+  it("server-renders the links but no video source", async () => {
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const creators: IntroCreatorLink[] = [
+      {
+        slug: "star-wars",
+        label: "Star Wars Intro",
+        href: "https://starwarsintrocreator.kassellabs.io",
+        video: "https://cdn.example/sw.mp4",
+      },
+    ];
+    const html = renderToStaticMarkup(<MoreCreators creators={creators} />);
+    expect(html).toContain('href="https://starwarsintrocreator.kassellabs.io"');
+    expect(html).toContain("Star Wars Intro");
+    expect(html).toContain('preload="none"');
+    // The clip URL is only a data attribute — no plain src=, so nothing is
+    // fetched from the server-rendered HTML.
+    expect(html).toContain('data-src="https://cdn.example/sw.mp4"');
+    expect(html).not.toMatch(/[^-]src="https:\/\/cdn\.example\/sw\.mp4"/);
+  });
+
+  it("attaches the preview source only once a card intersects the viewport", () => {
+    const observed: Element[] = [];
+    let trigger: ((entries: IntersectionObserverEntry[]) => void) | undefined;
+    let options: IntersectionObserverInit | undefined;
+    let instances = 0;
+    class FakeObserver {
+      constructor(cb: IntersectionObserverCallback, opts?: IntersectionObserverInit) {
+        instances += 1;
+        options = opts;
+        trigger = (entries) =>
+          cb(entries, this as unknown as IntersectionObserver);
+      }
+      observe(el: Element) {
+        observed.push(el);
+      }
+      unobserve() {}
+      disconnect() {}
+    }
+    vi.stubGlobal("IntersectionObserver", FakeObserver);
+
+    const creators: IntroCreatorLink[] = [
+      {
+        slug: "star-wars",
+        label: "Star Wars Intro",
+        href: "https://starwarsintrocreator.kassellabs.io",
+        video: "https://cdn.example/sw.mp4",
+      },
+    ];
+    const { container } = render(<MoreCreators creators={creators} />);
+    const video = container.querySelector("video") as HTMLVideoElement;
+
+    // A single observer for the whole grid, pre-loading slightly off-screen.
+    expect(instances).toBe(1);
+    expect(options?.rootMargin).toBe("200px");
+    expect(observed).toEqual([video]);
+    expect(video.getAttribute("src")).toBeNull();
+
+    trigger!([
+      { isIntersecting: true, target: video } as unknown as IntersectionObserverEntry,
+    ]);
+    expect(video.getAttribute("src")).toBe("https://cdn.example/sw.mp4");
+
+    vi.unstubAllGlobals();
   });
 
   it("shows label tiles (no video) for creators with no video", () => {

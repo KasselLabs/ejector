@@ -56,41 +56,49 @@ beforeEach(() => {
 });
 
 describe("PlayerPreview", () => {
-  it("mounts the Player with the Ejector composition config", () => {
+  it("mounts the Player with the Ejector composition config", async () => {
     render(<PlayerPreview props={baseProps} soundOn />);
-    const player = screen.getByTestId("player");
+    const player = await screen.findByTestId("player");
     expect(player).toHaveAttribute("data-duration", "165");
     expect(player).toHaveAttribute("data-fps", "30");
     expect(player).toHaveAttribute("data-width", "1920");
     expect(player).toHaveAttribute("data-height", "1080");
   });
 
-  it("passes the input props through to the Player", () => {
+  it("passes the input props through to the Player", async () => {
     render(<PlayerPreview props={baseProps} soundOn />);
-    const raw = screen.getByTestId("player").getAttribute("data-props");
+    const raw = (await screen.findByTestId("player")).getAttribute("data-props");
     expect(JSON.parse(raw ?? "{}").ejectedText).toBe(
       "Red was not The Impostor",
     );
   });
 
-  it("mutes the player initially when sound is off", () => {
+  it("mutes the player initially when sound is off", async () => {
     render(<PlayerPreview props={baseProps} soundOn={false} />);
-    expect(screen.getByTestId("player")).toHaveAttribute("data-muted", "true");
+    expect(await screen.findByTestId("player")).toHaveAttribute(
+      "data-muted",
+      "true",
+    );
   });
 
-  it("does not mute the player when sound is on", () => {
+  it("does not mute the player when sound is on", async () => {
     render(<PlayerPreview props={baseProps} soundOn />);
-    expect(screen.getByTestId("player")).toHaveAttribute("data-muted", "false");
+    expect(await screen.findByTestId("player")).toHaveAttribute(
+      "data-muted",
+      "false",
+    );
   });
 
-  it("unmutes the player via its ref when sound is on", () => {
+  it("unmutes the player via its ref when sound is on", async () => {
     render(<PlayerPreview props={baseProps} soundOn />);
+    await screen.findByTestId("player");
     expect(unmuteMock).toHaveBeenCalled();
     expect(muteMock).not.toHaveBeenCalled();
   });
 
-  it("mutes the player via its ref when sound toggles off", () => {
+  it("mutes the player via its ref when sound toggles off", async () => {
     const { rerender } = render(<PlayerPreview props={baseProps} soundOn />);
+    await screen.findByTestId("player");
     muteMock.mockClear();
     unmuteMock.mockClear();
     rerender(<PlayerPreview props={baseProps} soundOn={false} />);
@@ -102,5 +110,8 @@ describe("PlayerPreview", () => {
     const audio = container.querySelector("audio");
     expect(audio).toBeInTheDocument();
     expect(audio).toHaveAttribute("src", "/background.mp3");
+    // Deferred: the ambient track is only fetched on an actual play attempt.
+    expect(audio).toHaveAttribute("preload", "none");
   });
+
 });

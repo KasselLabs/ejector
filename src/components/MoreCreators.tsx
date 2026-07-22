@@ -3,6 +3,7 @@ import {
   KASSEL_LABS_URL,
   type IntroCreatorLink,
 } from "@/lib/introCreators";
+import { CreatorGrid } from "@/components/CreatorGrid";
 
 interface MoreCreatorsProps {
   /**
@@ -16,7 +17,9 @@ interface MoreCreatorsProps {
 /**
  * "More intro creators" gallery — a grid of the other Kassel Labs intro
  * creators, each with its looping preview clip from the admin GraphQL. Server
- * component so the links are crawlable and stay out of the client bundle.
+ * component so the links are crawlable and the data fetching stays on the
+ * server; only the grid itself is a client component, so the clips can be
+ * lazily attached as the gallery scrolls into view (see CreatorGrid).
  * Styled in Roboto/white to blend with the Ejector theme (no StarWars font).
  * Data lives in src/lib/introCreators.ts.
  */
@@ -25,41 +28,7 @@ export function MoreCreators({ creators = OTHER_INTRO_CREATORS }: MoreCreatorsPr
     <section className="kl-more" aria-label="More from Kassel Labs">
       <style>{MORE_CSS}</style>
       <h2 className="kl-more__title">More intro creators</h2>
-      <nav className="kl-more__grid" aria-label="Other intro creators">
-        {creators.map((creator) => {
-          const video = creator.video;
-          return (
-            <a
-              key={creator.href}
-              href={creator.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="kl-more__card"
-            >
-              <span className="kl-more__media">
-                {video ? (
-                  <video
-                    className="kl-more__video"
-                    muted
-                    autoPlay
-                    loop
-                    playsInline
-                    preload="metadata"
-                    aria-hidden
-                  >
-                    <source src={video} type="video/mp4" />
-                  </video>
-                ) : (
-                  <span className="kl-more__media-fallback" aria-hidden>
-                    {creator.label.replace(/\s*Intro$/, "")}
-                  </span>
-                )}
-              </span>
-              <span className="kl-more__label">{creator.label}</span>
-            </a>
-          );
-        })}
-      </nav>
+      <CreatorGrid creators={creators} />
       <a
         href={KASSEL_LABS_URL}
         target="_blank"

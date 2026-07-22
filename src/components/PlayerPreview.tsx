@@ -1,19 +1,49 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Player, type PlayerRef } from "@remotion/player";
-import {
-  EjectorComposition,
-  COMPOSITION_FPS,
-  COMPOSITION_DURATION_IN_FRAMES,
-  COMPOSITION_WIDTH,
-  COMPOSITION_HEIGHT,
-} from "@/remotion/EjectorComposition";
+import Image from "next/image";
+import dynamic from "next/dynamic";
 import type { EjectorProps } from "@/types";
 
+/** Starfield still from the composition, shown while the player chunk loads. */
+const POSTER_SRC = "/among-us-background-images/153.png";
+
+/**
+ * The preview poster: same 1920x1080 aspect ratio as the player, so the hero
+ * area paints something meaningful immediately and the player swaps in without
+ * shifting layout.
+ */
+function PreviewPoster() {
+  return (
+    <Image
+      src={POSTER_SRC}
+      alt=""
+      width={1920}
+      height={1080}
+      loading="eager"
+      sizes="(max-width: 720px) 100vw, 680px"
+      style={{
+        width: "100%",
+        height: "auto",
+        objectFit: "fill",
+        display: "block",
+      }}
+    />
+  );
+}
+
+// The Remotion player is ~1MB of JS; loading it lazily keeps it off the
+// initial critical path. `ssr: false` because it needs the DOM anyway.
+const RemotionPlayer = dynamic(() => import("./RemotionPlayer"), {
+  ssr: false,
+  loading: () => <PreviewPoster />,
+});
+
 // Browsers block autoplay with sound until the user has interacted with the
-// page, so we attempt to play the ambient track immediately and, if that is
-// rejected, retry once on the first pointer gesture.
+// page, so we attempt to play the ambient track immediately (when the document
+// has already been interacted with) and otherwise wait for the first pointer
+// gesture. The <audio> is `preload="none"`, so nothing is fetched until an
+// actual play attempt happens.
 function useAmbientAudio(soundOn: boolean) {
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -34,10 +64,20 @@ function useAmbientAudio(soundOn: boolean) {
       void audio.play().catch(() => {});
       window.removeEventListener("pointerdown", onGesture);
     };
-    void audio.play().catch(() => {
+    const waitForGesture = () => {
       if (cancelled) return;
       window.addEventListener("pointerdown", onGesture);
-    });
+    };
+
+    // Without a prior user activation the play() call is guaranteed to be
+    // rejected, and attempting it anyway would download background.mp3 before
+    // it can possibly be heard — so we go straight to the gesture path.
+    const activation = window.navigator.userActivation;
+    if (activation && !activation.hasBeenActive) {
+      waitForGesture();
+    } else {
+      void audio.play().catch(waitForGesture);
+    }
 
     return () => {
       cancelled = true;
@@ -56,32 +96,11 @@ export function PlayerPreview({
   soundOn: boolean;
 }) {
   const audioRef = useAmbientAudio(soundOn);
-  const playerRef = useRef<PlayerRef>(null);
-
-  // `initiallyMuted` only sets the mount-time state; imperatively (un)mute the
-  // player whenever the sound toggle changes so the preview audio follows it.
-  useEffect(() => {
-    if (soundOn) playerRef.current?.unmute();
-    else playerRef.current?.mute();
-  }, [soundOn]);
 
   return (
     <div className="overflow-hidden rounded-[10px] border-[3px] border-solid border-white bg-black">
-      <Player
-        ref={playerRef}
-        component={EjectorComposition}
-        inputProps={props}
-        durationInFrames={COMPOSITION_DURATION_IN_FRAMES}
-        fps={COMPOSITION_FPS}
-        compositionWidth={COMPOSITION_WIDTH}
-        compositionHeight={COMPOSITION_HEIGHT}
-        loop
-        autoPlay
-        controls
-        initiallyMuted={!soundOn}
-        style={{ width: "100%" }}
-      />
-      <audio ref={audioRef} loop src="/background.mp3" />
+      <RemotionPlayer props={props} soundOn={soundOn} />
+      <audio ref={audioRef} loop preload="none" src="/background.mp3" />
     </div>
   );
 }

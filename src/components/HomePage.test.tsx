@@ -67,8 +67,10 @@ describe("HomePage", () => {
     );
   });
 
-  it("seeds the live preview with the default composition props", () => {
+  it("seeds the live preview with the default composition props", async () => {
     renderHome();
+    // The player is loaded with next/dynamic, so it mounts a tick later.
+    await screen.findByTestId("player");
     expect(playerInputProps().ejectedText).toBe("Red was not The Impostor");
     expect(playerInputProps().impostorText).toBe("1 Impostor remains");
   });
@@ -82,6 +84,7 @@ describe("HomePage", () => {
     expect(screen.getByLabelText("Ejection Text")).toHaveValue(
       "Blue was ejected",
     );
+    await screen.findByTestId("player");
     expect(playerInputProps().ejectedText).toBe("Blue was ejected");
   });
 
@@ -91,6 +94,7 @@ describe("HomePage", () => {
     const input = screen.getByLabelText("Impostor Remain text");
     await user.clear(input);
     await user.type(input, "2 Impostors remain");
+    await screen.findByTestId("player");
     expect(playerInputProps().impostorText).toBe("2 Impostors remain");
   });
 
