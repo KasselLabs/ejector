@@ -280,7 +280,7 @@ function NavbarMenu({
           </li>
           <li>
             <a
-              href="https://kassellabs.io/help/privacy/"
+              href="https://kassellabs.io/privacy"
               target="_blank"
               rel="noopener noreferrer"
               onClick={onItemClick}

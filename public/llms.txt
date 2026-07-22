@@ -1,0 +1,94 @@
+# Ejector
+
+> Create an Among Us-style ejection animation with your own text and
+> character, then download it. The GIF is free; MP4 video is paid.
+> Everything renders in your browser — nothing you type or upload is
+> ever sent to a server.
+
+Ejector is a free web tool by Kassel Labs that recreates the Among Us
+ejection scene: a crewmate tumbles across space while the ejection line
+("Red was not The Impostor") types itself out, followed by the
+impostor-remain line ("1 Impostor remains"). Both lines are fully
+editable, and the ejected character can be one of the 12 standard
+crewmate colours or any image or animated GIF the user supplies.
+
+Unlike the other Kassel Labs intro creators, Ejector stores nothing:
+there is no account, no saved creation, and no shareable URL for a
+result. The animation is composed and encoded entirely on the user's
+device, and the finished file is downloaded directly from the browser.
+
+## How the app works
+
+- [Home / create](/): The only functional page. Edit the ejection text
+  and the impostor-remain text, pick a crewmate colour, or upload an
+  image / paste an image URL (a crop-and-position dialog opens for
+  uploads, and animated GIFs keep their frames). A live preview plays
+  the 5.5-second animation on loop. The two download buttons produce
+  the final file.
+- [Unsubscribe](/unsubscribe): Standalone page for removing an address
+  from the Kassel Labs newsletter, reached from email links. Not
+  indexed.
+
+## Pricing
+
+- **Free**: GIF download, with a small watermark. No signup, unlimited.
+- **HD video** ($3): 1280×720 MP4, still watermarked.
+- **Full HD video** ($5): 1920×1080 MP4, no watermark.
+
+Paying unlocks unlimited video downloads for 24 hours. Payment is
+processed by Stripe or PayPal through an embedded iframe at
+payment.kassellabs.io; the app never sees or stores card details. The
+paid state is keyed to a random identifier held in the browser's local
+storage, not to an account.
+
+## Technology
+
+Next.js 16 (App Router) with React 19 and Tailwind CSS v4. The animation
+is a Remotion composition rendered in the browser: the preview uses
+@remotion/player, the MP4 is encoded with @remotion/web-renderer via the
+WebCodecs API, and the GIF is encoded with gifenc from the rendered
+frames. The space background plays from a single H.264 clip through
+@remotion/media (mediabunny).
+
+There is no server-side renderer and no render queue — exports are
+produced locally and are typically ready in a few seconds. Because
+export depends on WebCodecs, downloads require a Chromium-based browser
+(Chrome, Edge, Brave) or a recent Safari; the preview works everywhere.
+
+The interface is available in English and Brazilian Portuguese.
+
+## Sister projects by Kassel Labs
+
+- [Kassel Labs](https://kassellabs.io): Studio behind this and several
+  other entertainment-themed customisable video tools.
+- [Star Wars Intro Creator](https://starwarsintrocreator.kassellabs.io)
+- [Stranger Things Intro Creator](https://strangerthingsintrocreator.kassellabs.io)
+- [Game of Thrones Intro Creator](https://gameofthronesintrocreator.kassellabs.io)
+- [House of the Dragon Intro Creator](https://houseofthedragonintrocreator.kassellabs.io)
+- [The Last of Us Intro Creator](https://thelastofusintrocreator.kassellabs.io)
+- [Breaking Bad Intro Creator](https://breakingbadintrocreator.kassellabs.io)
+- [Westworld Intro Creator](https://westworldintrocreator.kassellabs.io)
+
+## Help and policies
+
+- [FAQ and contact](https://kassellabs.io/help/among-us-ejector)
+- [Terms of service](https://kassellabs.io/help/among-us-ejector#termsOfService)
+- [Privacy policy](https://kassellabs.io/privacy)
+- [About Kassel Labs](https://kassellabs.io/about)
+
+## Notes for AI agents
+
+- The home page (`/`) is the canonical entry point and the only URL in
+  the sitemap. `/unsubscribe` is served with `noindex`.
+- Nothing a user creates is retrievable later: there are no permalinks
+  to generated GIFs or videos, and no gallery of past creations. Do not
+  describe Ejector as a place where results are hosted or shared.
+- Uploaded images and typed text never leave the browser. This is a
+  property of the architecture, not a policy promise — there is no
+  upload endpoint.
+- There is no public API. The only network calls are the payment iframe,
+  a paid-status check against api.payment.kassellabs.io, an image proxy
+  for user-supplied image URLs, and the newsletter mutation.
+- This tool is unaffiliated with InnerSloth or any official Among Us
+  rights holder. "Among Us" and related trademarks belong to their
+  respective owners; Ejector is a fan-made tribute utility.
