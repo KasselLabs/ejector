@@ -1,6 +1,7 @@
 import { HomePage } from "@/components/HomePage";
 import { Navbar } from "@/components/Navbar";
 import { MoreCreators } from "@/components/MoreCreators";
+import { AboutSection } from "@/components/AboutSection";
 import { fetchIntroCreators } from "@/lib/introCreators";
 
 export default async function Page() {
@@ -13,6 +14,7 @@ export default async function Page() {
       <Navbar creators={creators} />
       <HomePage />
       <MoreCreators creators={creators} />
+      <AboutSection />
     </>
   );
 }

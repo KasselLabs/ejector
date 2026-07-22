@@ -29,7 +29,10 @@ export function AboutSection() {
   ];
 
   return (
-    <section className="mt-8 flex flex-col gap-6 bg-black py-6 text-white">
+    // Sits at the very bottom of the page, below the creators gallery, and
+    // shares its container (920px, centred, divider on top) so the two
+    // supporting sections read as one rhythm rather than stray prose.
+    <section className="mx-auto flex max-w-[920px] flex-col gap-6 border-t border-white/15 px-6 pt-12 pb-16 text-white">
       <div className="flex flex-col gap-3">
         <h2 className="text-xl font-medium">
           {t("Make Your Own Ejection GIF or Video")}
