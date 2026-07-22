@@ -1,13 +1,17 @@
 import React from "react";
 import {
   AbsoluteFill,
-  Audio,
   Img,
   interpolate,
   staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
+// Audio MUST come from @remotion/media: remotion's own <Audio> renders as
+// <Html5Audio>, which @remotion/web-renderer rejects outright — it throws
+// while building the render scaffold, so every export fails before the first
+// frame. See https://remotion.dev/docs/client-side-rendering/limitations
+import { Audio, Video } from "@remotion/media";
 import type { EjectorProps } from "@/types";
 import { characterFrameAt } from "@/lib/characterImages";
 import {
@@ -29,9 +33,24 @@ export const DEFAULT_CHARACTER_URL =
 
 const BACKGROUND_FRAME_COUNT = 153; // legacy range(1, 154) is half-open: 1.png .. 153.png
 
-export function backgroundFrameSrc(frame: number): string {
-  const index = Math.min(BACKGROUND_FRAME_COUNT - 1, Math.round(frame));
-  return `/among-us-background-images/${index + 1}.png`;
+// The background plays from the source video rather than the 153 extracted
+// PNGs. Swapping an <Img> src every frame made Chrome abort the rapid
+// img.decode() calls on those 1920x1080 stills ("EncodingError: The source
+// image cannot be decoded."), so Remotion's delayRender() never cleared and
+// every export stalled, timed out and retried forever. One <Video> decodes
+// through the renderer's own media pipeline instead — and it is the same file
+// the PNGs were extracted from, so the picture is unchanged.
+export const BACKGROUND_VIDEO_SRC = "among-us-background.mp4";
+
+// Legacy parity: the canvas version clamped at index 152, freezing on
+// 153.png for the tail of the animation. Frames 0..151 come from the video;
+// from 152 on we hold that final still (a single, never-changing src).
+export function showsBackgroundVideoAt(frame: number): boolean {
+  return Math.round(frame) < BACKGROUND_FRAME_COUNT - 1;
+}
+
+export function frozenBackgroundFrameSrc(): string {
+  return `/among-us-background-images/${BACKGROUND_FRAME_COUNT}.png`;
 }
 
 const EJECTED_TEXT_START = 1.7;
@@ -85,16 +104,22 @@ export const EjectorComposition: React.FC<EjectorProps> = ({
 
   return (
     <AbsoluteFill style={{ backgroundColor: "black", overflow: "hidden" }}>
-      <Img
-        data-testid="bg-frame"
-        src={staticFile(backgroundFrameSrc(frame).slice(1))}
-        style={{
-          position: "absolute",
-          width: "100%",
-          height: "100%",
-          objectFit: "fill",
-        }}
-      />
+      <div data-testid="bg-frame" style={{ position: "absolute", inset: 0 }}>
+        {showsBackgroundVideoAt(frame) ? (
+          <Video
+            src={staticFile(BACKGROUND_VIDEO_SRC)}
+            // The clip carries its own audio track; the ejection sound is
+            // played separately below, exactly as the legacy version did.
+            muted
+            style={{ width: "100%", height: "100%", objectFit: "fill" }}
+          />
+        ) : (
+          <Img
+            src={staticFile(frozenBackgroundFrameSrc().slice(1))}
+            style={{ width: "100%", height: "100%", objectFit: "fill" }}
+          />
+        )}
+      </div>
       {/* Cover the tiny imperfection baked into the source frames */}
       <div
         style={{

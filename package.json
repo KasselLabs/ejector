@@ -15,6 +15,7 @@
     "e2e:ui": "playwright test --ui"
   },
   "dependencies": {
+    "@remotion/media": "^4.0.495",
     "@remotion/player": "^4.0.495",
     "@remotion/web-renderer": "^4.0.495",
     "class-variance-authority": "^0.7.1",

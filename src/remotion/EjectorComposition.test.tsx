@@ -1,16 +1,26 @@
 import { describe, expect, it } from "vitest";
 import {
-  backgroundFrameSrc,
+  showsBackgroundVideoAt,
+  frozenBackgroundFrameSrc,
   ejectedTextAt,
   impostorScaleAt,
   characterTransformAt,
 } from "./EjectorComposition";
 
-describe("backgroundFrameSrc", () => {
-  it("maps frame 0 to 1.png and clamps at 153.png", () => {
-    expect(backgroundFrameSrc(0)).toBe("/among-us-background-images/1.png");
-    expect(backgroundFrameSrc(152)).toBe("/among-us-background-images/153.png");
-    expect(backgroundFrameSrc(164)).toBe("/among-us-background-images/153.png");
+describe("background source", () => {
+  // Legacy parity: the canvas version clamped the frame sequence at index 152,
+  // freezing on 153.png for the tail. The video covers everything before it.
+  it("plays the video up to frame 151 and freezes on the last still from 152", () => {
+    expect(showsBackgroundVideoAt(0)).toBe(true);
+    expect(showsBackgroundVideoAt(151)).toBe(true);
+    expect(showsBackgroundVideoAt(152)).toBe(false);
+    expect(showsBackgroundVideoAt(164)).toBe(false);
+  });
+
+  it("freezes on the final extracted frame", () => {
+    expect(frozenBackgroundFrameSrc()).toBe(
+      "/among-us-background-images/153.png",
+    );
   });
 });
 
