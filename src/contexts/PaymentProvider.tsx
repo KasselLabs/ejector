@@ -15,13 +15,43 @@ import {
 } from "@/lib/payment/paidStatus";
 import { trackEvent } from "@/lib/tracking";
 
+const PAID_TIER_STORAGE_KEY = "ejector-payment-tier";
+
+function storedTierForCode(code: string): PaidTier | null {
+  try {
+    const stored = JSON.parse(
+      window.localStorage.getItem(PAID_TIER_STORAGE_KEY) ?? "null",
+    ) as { code?: unknown; tier?: unknown } | null;
+    if (
+      stored?.code === code &&
+      (stored.tier === "hd" || stored.tier === "full-hd")
+    ) {
+      return stored.tier;
+    }
+  } catch {
+    // Ignore malformed or unavailable browser storage and use backend data.
+  }
+  return null;
+}
+
+function storeTier(code: string, tier: PaidTier): void {
+  try {
+    window.localStorage.setItem(
+      PAID_TIER_STORAGE_KEY,
+      JSON.stringify({ code, tier }),
+    );
+  } catch {
+    // The current session remains unlocked even if storage is unavailable.
+  }
+}
+
 interface PaymentState {
   paid: boolean;
   tier: PaidTier | null;
   code: string | null;
   refresh: () => Promise<void>;
   /** Unlock immediately. `dollarValue` is DECIMAL DOLLARS (e.g. 5 == $5). */
-  markPaid: (dollarValue: number) => void;
+  markPaid: (dollarValue: number, purchasedTier?: PaidTier) => void;
 }
 
 const PaymentContext = createContext<PaymentState>({
@@ -57,7 +87,10 @@ export function PaymentProvider({ children }: { children: React.ReactNode }) {
     setCode(clientCode);
     if (status.paid) {
       setPaid(true);
-      setTier(tierForDollarValue(status.dollarValue));
+      setTier(
+        storedTierForCode(clientCode) ??
+          tierForDollarValue(status.dollarValue),
+      );
     }
   }, []);
 
@@ -69,13 +102,18 @@ export function PaymentProvider({ children }: { children: React.ReactNode }) {
     void refresh();
   }, [refresh]);
 
-  // `dollarValue` is DECIMAL DOLLARS (payment-frontend's success payload sends
-  // finalAmount == amount / 100), so map it through tierForDollarValue.
-  const markPaid = useCallback((dollarValue: number) => {
-    setPaid(true);
-    setTier(tierForDollarValue(dollarValue));
-    trackEvent("paid");
-  }, []);
+  // Prefer the tier explicitly selected in checkout. `dollarValue` remains the
+  // fallback for restored sessions that predate local tier persistence.
+  const markPaid = useCallback(
+    (dollarValue: number, purchasedTier?: PaidTier) => {
+      const resolvedTier = purchasedTier ?? tierForDollarValue(dollarValue);
+      setPaid(true);
+      setTier(resolvedTier);
+      storeTier(getClientCode(), resolvedTier);
+      trackEvent("paid");
+    },
+    [],
+  );
 
   return (
     <PaymentContext.Provider value={{ paid, tier, code, refresh, markPaid }}>

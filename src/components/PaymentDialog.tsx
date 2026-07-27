@@ -7,7 +7,6 @@ import {
   registerPaymentEventsHandler,
   unregisterPaymentEventsHandler,
 } from "@/lib/payment/paymentEvents";
-import { tierForDollarValue } from "@/lib/payment/paidStatus";
 import { paymentPageUrl } from "@/lib/config";
 import { trackEvent } from "@/lib/tracking";
 import {
@@ -45,7 +44,7 @@ export function PaymentDialog({
   onPaid: (tier: PaidTier) => void;
 }) {
   const t = useT();
-  const { code, paid, tier: contextTier, markPaid, refresh } = usePayment();
+  const { code, paid, markPaid, refresh } = usePayment();
   const [tier, setTier] = useState<PaidTier>("full-hd");
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -54,9 +53,9 @@ export function PaymentDialog({
   // session (keyed on `open`), but they need the latest callbacks/markPaid — so
   // those are read through a ref kept current via effect (never written during
   // render) instead of being listed as effect deps.
-  const latest = useRef({ markPaid, onClose, onPaid });
+  const latest = useRef({ markPaid, onClose, onPaid, tier });
   useEffect(() => {
-    latest.current = { markPaid, onClose, onPaid };
+    latest.current = { markPaid, onClose, onPaid, tier };
   });
 
   // Guards against firing onClose/onPaid more than once per open session (the
@@ -82,8 +81,8 @@ export function PaymentDialog({
 
     const handleSuccess = (payload: PaymentSuccessPayload) => {
       // finalAmount is DECIMAL DOLLARS (payment-frontend sends amount / 100).
-      latest.current.markPaid(payload.finalAmount);
-      finish(tierForDollarValue(payload.finalAmount));
+      latest.current.markPaid(payload.finalAmount, latest.current.tier);
+      finish(latest.current.tier);
     };
 
     registerPaymentEventsHandler(handleSuccess);
@@ -102,11 +101,13 @@ export function PaymentDialog({
   }, [open, refresh]);
 
   // When the polled paid status flips true while the dialog is open, close and
-  // unlock with the tier resolved from the backend dollar value.
+  // unlock the tier selected in this checkout. The backend's dollar value is
+  // the discounted amount and therefore cannot identify the purchased tier.
   useEffect(() => {
     if (!open || !paid) return;
-    finish(contextTier ?? tier);
-  }, [open, paid, contextTier, tier, finish]);
+    latest.current.markPaid(TIER_AMOUNT_DOLLARS[tier], tier);
+    finish(tier);
+  }, [open, paid, tier, finish]);
 
   function handleSelectTier(next: PaidTier) {
     setTier(next);
