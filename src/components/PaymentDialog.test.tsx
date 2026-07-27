@@ -100,6 +100,30 @@ describe("PaymentDialog", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
+  it("honors the selected Full HD tier when a coupon reduces the final amount", async () => {
+    const { onPaid } = renderDialog();
+    await screen.findByTitle("Payment Form");
+
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: {
+          type: "payment",
+          action: "success",
+          payload: {
+            amount: 500,
+            finalAmount: 0,
+            currency: "usd",
+            email: "a@b.com",
+            method: "coupon",
+          },
+        },
+        origin: ALLOWED_ORIGIN,
+      }),
+    );
+
+    await waitFor(() => expect(onPaid).toHaveBeenCalledWith("full-hd"));
+  });
+
   it("unlocks and closes when the paid status flips true while open", async () => {
     // Backend reports paid at the full-hd dollar value; the same fetch that the
     // 5s poll issues runs on mount, so the paid-flip effect must close the open
@@ -120,6 +144,22 @@ describe("PaymentDialog", () => {
 
     await waitFor(() => expect(onPaid).toHaveBeenCalledWith("full-hd"));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("honors the selected Full HD tier when discounted payment is detected by polling", async () => {
+    server.use(
+      http.get("*/payment/ejector/:code/paid", () =>
+        HttpResponse.json({ paid: true, dollarValue: 0 }),
+      ),
+    );
+    const onPaid = vi.fn();
+    render(
+      <PaymentProvider>
+        <PaymentDialog open onClose={() => {}} onPaid={onPaid} />
+      </PaymentProvider>,
+    );
+
+    await waitFor(() => expect(onPaid).toHaveBeenCalledWith("full-hd"));
   });
 
   it("does not render the dialog content when closed", () => {
