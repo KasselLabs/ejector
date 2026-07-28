@@ -330,7 +330,17 @@ describe("useFileGeneration", () => {
     expect(pollSignal?.aborted).toBe(false);
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(89_000);
+      await vi.advanceTimersByTimeAsync(88_999);
+    });
+
+    expect(pollSignal?.aborted).toBe(false);
+    expect(clearPendingDelivery).not.toHaveBeenCalled();
+    expect(downloadPublicUrl).not.toHaveBeenCalled();
+    expect(result.current.error).toBeNull();
+    expect(result.current.phase).toBe("finishing");
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
     });
 
     expect(pollSignal?.aborted).toBe(true);
@@ -387,6 +397,63 @@ describe("useFileGeneration", () => {
     expect(HTMLMediaElement.prototype.play).not.toHaveBeenCalled();
     expect(tracking.trackEvent).not.toHaveBeenCalled();
     expect(result.current.error).toBeNull();
+  });
+
+  it("ignores a stale recovery failure after a new payment-code owner starts", async () => {
+    let oldSignal: AbortSignal | undefined;
+    let oldReject!: (reason: unknown) => void;
+    let newSignal: AbortSignal | undefined;
+    readPendingDelivery.mockReturnValue({
+      deliveryId: DELIVERY_ID,
+      tier: "full-hd",
+      filename: "Red-was-ejected.mp4",
+    });
+    getStatus
+      .mockImplementationOnce((_deliveryId, options) => {
+        oldSignal = options?.signal;
+        return new Promise((_resolve, reject) => {
+          oldReject = reject;
+        });
+      })
+      .mockImplementationOnce((_deliveryId, options) => {
+        newSignal = options?.signal;
+        return new Promise((_resolve, reject) => {
+          newSignal?.addEventListener(
+            "abort",
+            () => reject(newSignal?.reason),
+            { once: true },
+          );
+        });
+      });
+    const { result, rerender } = renderHook(
+      ({ paymentCode }) => useFileGeneration(paymentCode),
+      { initialProps: { paymentCode: "old-payment-code" } },
+    );
+    await waitFor(() => expect(getStatus).toHaveBeenCalledTimes(1));
+
+    rerender({ paymentCode: "new-payment-code" });
+    await waitFor(() => expect(getStatus).toHaveBeenCalledTimes(2));
+
+    expect(oldSignal?.aborted).toBe(true);
+    expect(newSignal?.aborted).toBe(false);
+    expect(createDeliveryClient.mock.calls.map(([, code]) => code)).toEqual([
+      "old-payment-code",
+      "new-payment-code",
+    ]);
+
+    await act(async () => {
+      oldReject(new HttpDeliveryError(410, false));
+      await Promise.resolve();
+    });
+
+    expect(result.current.generating).toBe("mp4");
+    expect(result.current.phase).toBe("finishing");
+    expect(result.current.error).toBeNull();
+    expect(clearPendingDelivery).not.toHaveBeenCalled();
+    expect(downloadPublicUrl).not.toHaveBeenCalled();
+    expect(downloadBlob).not.toHaveBeenCalled();
+    expect(HTMLMediaElement.prototype.play).not.toHaveBeenCalled();
+    expect(tracking.trackEvent).not.toHaveBeenCalled();
   });
 
   it("clears a recovery record when no current payment code exists", async () => {
