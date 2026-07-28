@@ -42,6 +42,7 @@
   "Generating": "Generating",
   "Your generation is being finished.": "Your generation is being finished.",
   "We couldn't finish delivering your video.": "We couldn't finish delivering your video.",
+  "Please generate the video again to finish delivery.": "Please generate the video again to finish delivery.",
   "Retry delivery": "Retry delivery",
   "GIF": "GIF",
   "Video": "Video",

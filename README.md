@@ -75,9 +75,14 @@ template) and is read once in `src/lib/config.ts`.
     only after the provider accepts the one email for that generated video.
     The browser stores only one recovery record containing the delivery UUID,
     tier, and filename. After refresh, it can resume a server-confirmed upload
-    or pending email and download the persistent URL after acceptance; records
-    created before upload are cleared because the MP4 Blob is not stored in
-    browser storage.
+    or pending email and download the persistent URL after acceptance.
+    Retryable server/transport failures keep that same record and expose
+    **Retry delivery**, which calls backend retry/complete/status using the same
+    UUID. If the backend needs another upload, the Blob is unavailable after
+    refresh: the record is cleared and the user is explicitly asked to generate
+    again. The frontend never silently creates another UUID. Status is polled
+    at 1 Hz for at most 90 seconds; the backend contract reserves 120 reads/min
+    per IP and payment code for this flow and retry overhead.
 - **Newsletter** subscribe/unsubscribe goes directly to `admin.kassellabs.io`'s
   GraphQL API (no proxy through this app's own backend, because there isn't
   one).

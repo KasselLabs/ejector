@@ -15,10 +15,12 @@ const downloadPublicUrl = vi.fn();
 const finishVideoDelivery = vi.fn();
 const getStatus = vi.fn();
 const complete = vi.fn();
+const retry = vi.fn();
 const deliveryClient = {
   client: "delivery-client",
   getStatus,
   complete,
+  retry,
 };
 const createDeliveryClient = vi.fn(
   (_baseUrl: string, _paymentCode: string) => deliveryClient,
@@ -84,6 +86,7 @@ beforeEach(() => {
   createDeliveryClient.mockClear();
   getStatus.mockReset();
   complete.mockReset();
+  retry.mockReset();
   readPendingDelivery.mockReset().mockReturnValue(null);
   savePendingDelivery.mockReset();
   clearPendingDelivery.mockReset();
@@ -194,11 +197,17 @@ describe("useFileGeneration", () => {
       retryable: true,
     });
 
-    renderHook(() => useFileGeneration("payment-code"));
+    const { result } = renderHook(() =>
+      useFileGeneration("payment-code"),
+    );
 
     await waitFor(() =>
       expect(clearPendingDelivery).toHaveBeenCalledTimes(1),
     );
+    expect(result.current.error).toBe(
+      "Please generate the video again to finish delivery.",
+    );
+    expect(result.current.canRetryDelivery).toBe(false);
     expect(downloadPublicUrl).not.toHaveBeenCalled();
     expect(complete).not.toHaveBeenCalled();
   });
@@ -243,6 +252,7 @@ describe("useFileGeneration", () => {
 
       expect(clearPendingDelivery).not.toHaveBeenCalled();
       expect(downloadPublicUrl).not.toHaveBeenCalled();
+      expect(result.current.canRetryDelivery).toBe(true);
     },
   );
 
@@ -292,6 +302,198 @@ describe("useFileGeneration", () => {
 
     expect(clearPendingDelivery).toHaveBeenCalledTimes(1);
     expect(downloadPublicUrl).not.toHaveBeenCalled();
+  });
+
+  it("offers refresh retry for an email-stage failure and reuses the delivery UUID", async () => {
+    const pending = {
+      deliveryId: DELIVERY_ID,
+      tier: "full-hd" as const,
+      filename: "Red-was-ejected.mp4",
+    };
+    readPendingDelivery.mockReturnValue(pending);
+    getStatus.mockResolvedValue({
+      deliveryId: DELIVERY_ID,
+      status: "failed",
+      downloadUrl: PUBLIC_URL,
+      retryable: true,
+      error: { message: "Delivery failed." },
+    });
+    retry.mockResolvedValue({
+      deliveryId: DELIVERY_ID,
+      status: "email_accepted",
+      downloadUrl: PUBLIC_URL,
+      retryable: false,
+    });
+    const { result } = renderHook(() =>
+      useFileGeneration("payment-code"),
+    );
+
+    await waitFor(() => expect(result.current.canRetryDelivery).toBe(true));
+    expect(clearPendingDelivery).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await result.current.retryDelivery();
+    });
+
+    expect(retry).toHaveBeenCalledWith(
+      DELIVERY_ID,
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+    expect(globalThis.crypto.randomUUID).not.toHaveBeenCalled();
+    expect(renderEjectionVideo).not.toHaveBeenCalled();
+    expect(downloadPublicUrl).toHaveBeenCalledWith(
+      PUBLIC_URL,
+      pending.filename,
+    );
+    expect(downloadBlob).not.toHaveBeenCalled();
+    expect(clearPendingDelivery).toHaveBeenCalledTimes(1);
+    expect(result.current.canRetryDelivery).toBe(false);
+    expect(result.current.error).toBeNull();
+  });
+
+  it("keeps refresh retry identity after a retryable transport failure", async () => {
+    readPendingDelivery.mockReturnValue({
+      deliveryId: DELIVERY_ID,
+      tier: "hd",
+      filename: "Blue-was-ejected.mp4",
+    });
+    getStatus.mockRejectedValue(new TypeError("offline"));
+    retry
+      .mockRejectedValueOnce(new HttpDeliveryError(503, true))
+      .mockResolvedValueOnce({
+        deliveryId: DELIVERY_ID,
+        status: "email_accepted",
+        downloadUrl: PUBLIC_URL,
+        retryable: false,
+      });
+    const { result } = renderHook(() =>
+      useFileGeneration("payment-code"),
+    );
+
+    await waitFor(() => expect(result.current.canRetryDelivery).toBe(true));
+    await act(async () => {
+      await result.current.retryDelivery();
+    });
+    expect(result.current.canRetryDelivery).toBe(true);
+    expect(clearPendingDelivery).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await result.current.retryDelivery();
+    });
+
+    expect(retry).toHaveBeenCalledTimes(2);
+    expect(retry.mock.calls.map(([deliveryId]) => deliveryId))
+      .toEqual([DELIVERY_ID, DELIVERY_ID]);
+    expect(globalThis.crypto.randomUUID).not.toHaveBeenCalled();
+    expect(downloadPublicUrl).toHaveBeenCalledWith(
+      PUBLIC_URL,
+      "Blue-was-ejected.mp4",
+    );
+  });
+
+  it("times out refresh retry polling while retaining its delivery action", async () => {
+    vi.useFakeTimers();
+    let pollSignal: AbortSignal | undefined;
+    readPendingDelivery.mockReturnValue({
+      deliveryId: DELIVERY_ID,
+      tier: "hd",
+      filename: "Blue-was-ejected.mp4",
+    });
+    getStatus
+      .mockResolvedValueOnce({
+        deliveryId: DELIVERY_ID,
+        status: "failed",
+        downloadUrl: PUBLIC_URL,
+        retryable: true,
+        error: { message: "Delivery failed." },
+      })
+      .mockImplementationOnce((_deliveryId, options) => {
+        pollSignal = options?.signal;
+        return new Promise((_resolve, reject) => {
+          pollSignal?.addEventListener(
+            "abort",
+            () => reject(pollSignal?.reason),
+            { once: true },
+          );
+        });
+      });
+    retry.mockResolvedValue({
+      deliveryId: DELIVERY_ID,
+      status: "email_pending",
+      downloadUrl: PUBLIC_URL,
+      retryable: false,
+    });
+    const { result } = renderHook(() =>
+      useFileGeneration("payment-code"),
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(result.current.canRetryDelivery).toBe(true);
+
+    let retryPromise!: Promise<void>;
+    act(() => {
+      retryPromise = result.current.retryDelivery();
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(pollSignal?.aborted).toBe(false);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(89_000);
+      await retryPromise;
+    });
+
+    expect(pollSignal?.aborted).toBe(true);
+    expect(result.current.canRetryDelivery).toBe(true);
+    expect(clearPendingDelivery).not.toHaveBeenCalled();
+    expect(globalThis.crypto.randomUUID).not.toHaveBeenCalled();
+  });
+
+  it("clears refresh recovery and asks for regeneration when retry returns an upload target", async () => {
+    readPendingDelivery.mockReturnValue({
+      deliveryId: DELIVERY_ID,
+      tier: "hd",
+      filename: "Blue-was-ejected.mp4",
+    });
+    getStatus.mockResolvedValue({
+      deliveryId: DELIVERY_ID,
+      status: "failed",
+      downloadUrl: PUBLIC_URL,
+      retryable: true,
+      error: { message: "Upload incomplete." },
+    });
+    retry.mockResolvedValue({
+      deliveryId: DELIVERY_ID,
+      status: "failed",
+      downloadUrl: PUBLIC_URL,
+      uploadUrl: "https://storage.test/fresh-target",
+      uploadHeaders: { "Content-Type": "video/mp4" },
+      retryable: true,
+      error: { message: "Upload incomplete." },
+    });
+    const { result } = renderHook(() =>
+      useFileGeneration("payment-code"),
+    );
+
+    await waitFor(() => expect(result.current.canRetryDelivery).toBe(true));
+    await act(async () => {
+      await result.current.retryDelivery();
+    });
+
+    expect(retry).toHaveBeenCalledWith(
+      DELIVERY_ID,
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+    expect(clearPendingDelivery).toHaveBeenCalledTimes(1);
+    expect(result.current.canRetryDelivery).toBe(false);
+    expect(result.current.error).toBe(
+      "Please generate the video again to finish delivery.",
+    );
+    expect(globalThis.crypto.randomUUID).not.toHaveBeenCalled();
+    expect(downloadPublicUrl).not.toHaveBeenCalled();
+    expect(downloadBlob).not.toHaveBeenCalled();
   });
 
   it("aborts at the hard recovery deadline and retains retryable recovery", async () => {

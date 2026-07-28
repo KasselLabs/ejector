@@ -55,6 +55,18 @@ interface PendingDelivery {
   deliveryId: string;
 }
 
+interface PendingRecovery {
+  record: PendingDeliveryRecord;
+  paymentCode: string;
+}
+
+class DeliveryNeedsRegenerationError extends Error {
+  constructor() {
+    super("The rendered video Blob is no longer available.");
+    this.name = "DeliveryNeedsRegenerationError";
+  }
+}
+
 const RECOVERY_POLL_INTERVAL_MS = 1000;
 const RECOVERY_TIMEOUT_MS = 90_000;
 
@@ -99,8 +111,18 @@ async function recoverPendingDelivery(
   client: DeliveryClient,
   pending: PendingDeliveryRecord,
   signal: AbortSignal,
+  retryFirst = false,
 ): Promise<DeliveryResponse> {
-  let current = await client.getStatus(pending.deliveryId, { signal });
+  let current = retryFirst
+    ? await client.retry(pending.deliveryId, { signal })
+    : await client.getStatus(pending.deliveryId, { signal });
+
+  if (
+    current.status === "created" ||
+    Boolean(current.uploadUrl && current.uploadHeaders)
+  ) {
+    throw new DeliveryNeedsRegenerationError();
+  }
 
   if (current.status === "uploaded") {
     current = await client.complete(pending.deliveryId, { signal });
@@ -128,6 +150,8 @@ export function useFileGeneration(
   const [canRetryDelivery, setCanRetryDelivery] = useState(false);
   const runningRef = useRef(false);
   const pendingDeliveryRef = useRef<PendingDelivery | null>(null);
+  const pendingRecoveryRef = useRef<PendingRecovery | null>(null);
+  const manualRecoveryControllerRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
   const operationRef = useRef(0);
 
@@ -136,6 +160,8 @@ export function useFileGeneration(
     return () => {
       mountedRef.current = false;
       operationRef.current += 1;
+      manualRecoveryControllerRef.current?.abort();
+      manualRecoveryControllerRef.current = null;
     };
   }, []);
 
@@ -154,12 +180,14 @@ export function useFileGeneration(
     const pending = readPendingDelivery();
     if (!pending) return;
     if (!paymentCode) {
+      pendingRecoveryRef.current = null;
       clearPendingDelivery();
       return;
     }
     if (runningRef.current) return;
 
     runningRef.current = true;
+    pendingRecoveryRef.current = { record: pending, paymentCode };
     const operationId = ++operationRef.current;
     const controller = new AbortController();
     const deadline = setTimeout(() => {
@@ -184,6 +212,7 @@ export function useFileGeneration(
       .then((current) => {
         if (!isActiveOperation(operationId)) return;
         if (current.status === "email_accepted") {
+          pendingRecoveryRef.current = null;
           clearPendingDelivery();
           downloadPublicUrl(
             (current as AcceptedDelivery).downloadUrl,
@@ -197,8 +226,15 @@ export function useFileGeneration(
           return;
         }
 
-        clearPendingDelivery();
         if (current.status === "failed") {
+          if (current.retryable) {
+            setCanRetryDelivery(true);
+            setError(t("We couldn't finish delivering your video."));
+            return;
+          }
+          pendingRecoveryRef.current = null;
+          clearPendingDelivery();
+          setCanRetryDelivery(false);
           setError(t("We couldn't finish delivering your video."));
         }
       })
@@ -208,12 +244,25 @@ export function useFileGeneration(
           recoveryError instanceof HttpDeliveryError &&
           recoveryError.status === 404
         ) {
+          pendingRecoveryRef.current = null;
           clearPendingDelivery();
           return;
         }
-        if (!canRetry(recoveryError)) {
+        if (recoveryError instanceof DeliveryNeedsRegenerationError) {
+          pendingRecoveryRef.current = null;
+          clearPendingDelivery();
+          setCanRetryDelivery(false);
+          setError(
+            t("Please generate the video again to finish delivery."),
+          );
+          return;
+        }
+        const retryable = canRetry(recoveryError);
+        if (!retryable) {
+          pendingRecoveryRef.current = null;
           clearPendingDelivery();
         }
+        setCanRetryDelivery(retryable);
         setError(t("We couldn't finish delivering your video."));
       })
       .finally(() => {
@@ -376,7 +425,8 @@ export function useFileGeneration(
 
   const retryDelivery = useCallback(async () => {
     const pending = pendingDeliveryRef.current;
-    if (!pending || runningRef.current) return;
+    const recovery = pendingRecoveryRef.current;
+    if ((!pending && !recovery) || runningRef.current) return;
     runningRef.current = true;
     const operationId = ++operationRef.current;
     setError(null);
@@ -384,7 +434,70 @@ export function useFileGeneration(
     setGenerating("mp4");
     setPhase("finishing");
     try {
-      await deliver(pending, operationId);
+      if (pending) {
+        await deliver(pending, operationId);
+        return;
+      }
+      if (!recovery) return;
+
+      const controller = new AbortController();
+      manualRecoveryControllerRef.current = controller;
+      const deadline = setTimeout(() => {
+        controller.abort(
+          new DeliveryError("Video delivery recovery timed out.", {
+            status: "failed",
+            retryable: true,
+          }),
+        );
+      }, RECOVERY_TIMEOUT_MS);
+      let current: DeliveryResponse;
+      try {
+        current = await recoverPendingDelivery(
+          createDeliveryClient(paymentApiUrl, recovery.paymentCode),
+          recovery.record,
+          controller.signal,
+          true,
+        );
+      } finally {
+        clearTimeout(deadline);
+        if (manualRecoveryControllerRef.current === controller) {
+          manualRecoveryControllerRef.current = null;
+        }
+      }
+      if (!isActiveOperation(operationId)) return;
+      if (current.status !== "email_accepted") {
+        throw DeliveryError.from(current);
+      }
+
+      pendingRecoveryRef.current = null;
+      clearPendingDelivery();
+      setCanRetryDelivery(false);
+      downloadPublicUrl(current.downloadUrl, recovery.record.filename);
+      trackEvent("download_button_finish", {
+        event_label: "mp4",
+        event_category: "download",
+      });
+      playSound("/task_Complete.mp3");
+    } catch (recoveryError) {
+      if (!isActiveOperation(operationId) || pending) return;
+
+      if (recoveryError instanceof DeliveryNeedsRegenerationError) {
+        pendingRecoveryRef.current = null;
+        clearPendingDelivery();
+        setCanRetryDelivery(false);
+        setError(
+          t("Please generate the video again to finish delivery."),
+        );
+        return;
+      }
+
+      const retryable = canRetry(recoveryError);
+      if (!retryable) {
+        pendingRecoveryRef.current = null;
+        clearPendingDelivery();
+      }
+      setCanRetryDelivery(retryable);
+      setError(t("We couldn't finish delivering your video."));
     } finally {
       if (isActiveOperation(operationId)) {
         runningRef.current = false;
@@ -393,7 +506,7 @@ export function useFileGeneration(
         setProgress(0);
       }
     }
-  }, [deliver, isActiveOperation]);
+  }, [deliver, isActiveOperation, t]);
 
   return {
     generating,

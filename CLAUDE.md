@@ -21,9 +21,15 @@
   acceptance. The browser retains only delivery UUID, tier, and filename in
   `ejector-pending-delivery`; it never stores the Blob, payment code, email, or
   public URL in that recovery record. On refresh, only server-confirmed
-  uploaded or email-pending work resumes. `NEXT_PUBLIC_PAYMENT_API_URL` is the
-  only public frontend setting needed for these routes; storage and mail
-  credentials remain server-only.
+  uploaded or email-pending work resumes automatically. Retryable email-stage
+  or transport failures expose **Retry delivery** and reuse that stored UUID
+  without a Blob. If retry returns a fresh upload target, the Blob is no longer
+  available: clear the record and tell the user to generate again; never mint a
+  replacement UUID implicitly. `NEXT_PUBLIC_PAYMENT_API_URL` is the only public
+  frontend setting needed for these routes; storage and mail credentials remain
+  server-only. Status polling is 1 Hz for at most 90 seconds; payment-backend
+  reserves 120 status reads/minute per IP and payment code (mutations remain
+  30/minute).
 - **Two sibling repos must deploy together with this app**: payment-backend
   (branch `feat/ejector-app`) and payment-frontend (branch `feat/ejector-app`).
   Neither has an ejector-specific branch on `main`.
