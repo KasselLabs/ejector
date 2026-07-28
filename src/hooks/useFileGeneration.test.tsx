@@ -5,16 +5,27 @@ import { staticCharacterFrames } from "@/lib/characterImages";
 import { DEFAULT_CHARACTER_URL } from "@/remotion/EjectorComposition";
 import * as tracking from "@/lib/tracking";
 import { DeliveryError } from "@/lib/delivery/finishVideoDelivery";
+import { HttpDeliveryError } from "@/lib/delivery/retry";
 
 const checkRenderSupport = vi.fn();
 const renderEjectionGif = vi.fn();
 const renderEjectionVideo = vi.fn();
 const downloadBlob = vi.fn();
+const downloadPublicUrl = vi.fn();
 const finishVideoDelivery = vi.fn();
-const deliveryClient = { client: "delivery-client" };
+const getStatus = vi.fn();
+const complete = vi.fn();
+const deliveryClient = {
+  client: "delivery-client",
+  getStatus,
+  complete,
+};
 const createDeliveryClient = vi.fn(
   (_baseUrl: string, _paymentCode: string) => deliveryClient,
 );
+const readPendingDelivery = vi.fn();
+const savePendingDelivery = vi.fn();
+const clearPendingDelivery = vi.fn();
 
 vi.mock("@/lib/render/capability", () => ({
   checkRenderSupport: (...args: unknown[]) => checkRenderSupport(...args),
@@ -42,6 +53,14 @@ vi.mock("@/lib/delivery/finishVideoDelivery", async (importOriginal) => {
     finishVideoDelivery: (...args: unknown[]) => finishVideoDelivery(...args),
   };
 });
+vi.mock("@/lib/delivery/pendingDelivery", () => ({
+  readPendingDelivery: (...args: unknown[]) => readPendingDelivery(...args),
+  savePendingDelivery: (...args: unknown[]) => savePendingDelivery(...args),
+  clearPendingDelivery: (...args: unknown[]) => clearPendingDelivery(...args),
+}));
+vi.mock("@/lib/delivery/downloadPublicUrl", () => ({
+  downloadPublicUrl: (...args: unknown[]) => downloadPublicUrl(...args),
+}));
 
 import { useFileGeneration } from "./useFileGeneration";
 
@@ -61,7 +80,13 @@ beforeEach(() => {
   renderEjectionGif.mockReset().mockResolvedValue(new Blob(["gif"]));
   renderEjectionVideo.mockReset().mockResolvedValue(new Blob(["video"]));
   downloadBlob.mockReset();
+  downloadPublicUrl.mockReset();
   createDeliveryClient.mockClear();
+  getStatus.mockReset();
+  complete.mockReset();
+  readPendingDelivery.mockReset().mockReturnValue(null);
+  savePendingDelivery.mockReset();
+  clearPendingDelivery.mockReset();
   finishVideoDelivery.mockReset().mockResolvedValue({
     deliveryId: DELIVERY_ID,
     status: "email_accepted",
@@ -76,10 +101,178 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.restoreAllMocks();
 });
 
 describe("useFileGeneration", () => {
+  it("resumes an email-pending delivery and downloads its public URL after acceptance", async () => {
+    vi.useFakeTimers();
+    const pending = {
+      deliveryId: DELIVERY_ID,
+      tier: "full-hd",
+      filename: "Red-was-ejected.mp4",
+    };
+    readPendingDelivery.mockReturnValue(pending);
+    getStatus
+      .mockResolvedValueOnce({
+        deliveryId: DELIVERY_ID,
+        status: "email_pending",
+        downloadUrl: PUBLIC_URL,
+        retryable: true,
+      })
+      .mockResolvedValueOnce({
+        deliveryId: DELIVERY_ID,
+        status: "email_accepted",
+        downloadUrl: PUBLIC_URL,
+        retryable: false,
+      });
+
+    renderHook(() => useFileGeneration("payment-code"));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(getStatus).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+
+    expect(downloadPublicUrl).toHaveBeenCalledWith(
+      PUBLIC_URL,
+      pending.filename,
+    );
+    expect(clearPendingDelivery).toHaveBeenCalledTimes(1);
+    expect(renderEjectionVideo).not.toHaveBeenCalled();
+    expect(downloadBlob).not.toHaveBeenCalled();
+  });
+
+  it("completes a server-confirmed upload before polling recovery", async () => {
+    readPendingDelivery.mockReturnValue({
+      deliveryId: DELIVERY_ID,
+      tier: "hd",
+      filename: "Blue-was-ejected.mp4",
+    });
+    getStatus.mockResolvedValue({
+      deliveryId: DELIVERY_ID,
+      status: "uploaded",
+      downloadUrl: PUBLIC_URL,
+      retryable: true,
+    });
+    complete.mockResolvedValue({
+      deliveryId: DELIVERY_ID,
+      status: "email_accepted",
+      downloadUrl: PUBLIC_URL,
+      retryable: false,
+    });
+
+    renderHook(() => useFileGeneration("payment-code"));
+
+    await waitFor(() =>
+      expect(downloadPublicUrl).toHaveBeenCalledWith(
+        PUBLIC_URL,
+        "Blue-was-ejected.mp4",
+      ),
+    );
+    expect(complete).toHaveBeenCalledWith(
+      DELIVERY_ID,
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+    expect(renderEjectionVideo).not.toHaveBeenCalled();
+  });
+
+  it("clears a pre-upload recovery record because its Blob is unavailable", async () => {
+    readPendingDelivery.mockReturnValue({
+      deliveryId: DELIVERY_ID,
+      tier: "hd",
+      filename: "Blue-was-ejected.mp4",
+    });
+    getStatus.mockResolvedValue({
+      deliveryId: DELIVERY_ID,
+      status: "created",
+      downloadUrl: PUBLIC_URL,
+      retryable: true,
+    });
+
+    renderHook(() => useFileGeneration("payment-code"));
+
+    await waitFor(() =>
+      expect(clearPendingDelivery).toHaveBeenCalledTimes(1),
+    );
+    expect(downloadPublicUrl).not.toHaveBeenCalled();
+    expect(complete).not.toHaveBeenCalled();
+  });
+
+  it("clears recovery that is absent for the current payment code", async () => {
+    readPendingDelivery.mockReturnValue({
+      deliveryId: DELIVERY_ID,
+      tier: "hd",
+      filename: "Blue-was-ejected.mp4",
+    });
+    getStatus.mockRejectedValue(new HttpDeliveryError(404, false));
+
+    renderHook(() => useFileGeneration("different-payment-code"));
+
+    await waitFor(() =>
+      expect(clearPendingDelivery).toHaveBeenCalledTimes(1),
+    );
+    expect(downloadPublicUrl).not.toHaveBeenCalled();
+  });
+
+  it("clears a recovery record when no current payment code exists", async () => {
+    readPendingDelivery.mockReturnValue({
+      deliveryId: DELIVERY_ID,
+      tier: "hd",
+      filename: "Blue-was-ejected.mp4",
+    });
+
+    renderHook(() => useFileGeneration(null));
+
+    await waitFor(() =>
+      expect(clearPendingDelivery).toHaveBeenCalledTimes(1),
+    );
+    expect(createDeliveryClient).not.toHaveBeenCalled();
+  });
+
+  it("gives refresh recovery sole ownership while it is active", async () => {
+    let resolveStatus!: (value: {
+      deliveryId: string;
+      status: "email_accepted";
+      downloadUrl: string;
+      retryable: false;
+    }) => void;
+    readPendingDelivery.mockReturnValue({
+      deliveryId: DELIVERY_ID,
+      tier: "full-hd",
+      filename: "Red-was-ejected.mp4",
+    });
+    getStatus.mockReturnValue(
+      new Promise((resolve) => {
+        resolveStatus = resolve;
+      }),
+    );
+    const { result } = renderHook(() =>
+      useFileGeneration("payment-code"),
+    );
+    await waitFor(() => expect(getStatus).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      await result.current.generate("mp4", props, "full-hd");
+    });
+    expect(renderEjectionVideo).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveStatus({
+        deliveryId: DELIVERY_ID,
+        status: "email_accepted",
+        downloadUrl: PUBLIC_URL,
+        retryable: false,
+      });
+    });
+    expect(downloadPublicUrl).toHaveBeenCalledTimes(1);
+    expect(downloadBlob).not.toHaveBeenCalled();
+  });
+
   it("renders the gif and downloads it with the ejection filename", async () => {
     const { result } = renderHook(() => useFileGeneration("code"));
 
@@ -143,6 +336,11 @@ describe("useFileGeneration", () => {
         tier: "full-hd",
       }),
     );
+    expect(savePendingDelivery).toHaveBeenCalledWith({
+      deliveryId: DELIVERY_ID,
+      tier: "full-hd",
+      filename: "Red-was-ejected.mp4",
+    });
 
     await act(async () => {
       resolveDelivery({
@@ -163,6 +361,7 @@ describe("useFileGeneration", () => {
     );
     expect(result.current.phase).toBeNull();
     expect(result.current.canRetryDelivery).toBe(false);
+    expect(clearPendingDelivery).toHaveBeenCalledTimes(1);
   });
 
   it("manual retry reuses the Blob and UUID without rerendering", async () => {
@@ -209,6 +408,7 @@ describe("useFileGeneration", () => {
     );
     expect(result.current.error).toBeNull();
     expect(result.current.canRetryDelivery).toBe(false);
+    expect(clearPendingDelivery).toHaveBeenCalled();
   });
 
   it("does not expose a retained retry through a later capability error", async () => {
@@ -377,6 +577,7 @@ describe("useFileGeneration", () => {
     );
     expect(result.current.canRetryDelivery).toBe(false);
     expect(finishVideoDelivery).toHaveBeenCalledTimes(1);
+    expect(clearPendingDelivery).toHaveBeenCalledTimes(1);
     expect(downloadBlob).not.toHaveBeenCalled();
   });
 

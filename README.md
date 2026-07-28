@@ -27,7 +27,7 @@ template) and is read once in `src/lib/config.ts`.
 | Variable | Purpose | Default when unset |
 | --- | --- | --- |
 | `NEXT_PUBLIC_PAYMENT_PAGE_URL` | Origin of the payment-frontend app embedded as an iframe for checkout, and the only origin `postMessage` payment-success events are trusted from. | `https://payment.kassellabs.io` |
-| `NEXT_PUBLIC_PAYMENT_API_URL` | Base URL of the payment-backend API, used for the `GET /payment/ejector/:code/paid` paid-status check. **Must be set in production** (the payment-backend origin) — when unset it resolves same-origin, so the 24h paid-status restore silently no-ops and returning paid users are re-prompted to pay. Production value: `https://api.payment.kassellabs.io`. | `""` (same-origin) |
+| `NEXT_PUBLIC_PAYMENT_API_URL` | Base URL of payment-backend, used for paid-status checks and the paid-video delivery routes. **Must be set in production** (the payment-backend origin) — when unset it resolves same-origin, so paid status and delivery requests cannot reach the production API. No separate public storage or mail setting is required. Production value: `https://api.payment.kassellabs.io`. | `""` (same-origin) |
 | `NEXT_PUBLIC_ADMIN_GRAPHQL_URL` | GraphQL endpoint on `admin.kassellabs.io` used for newsletter subscribe/unsubscribe. | `https://admin.kassellabs.io/graphql` |
 | `NEXT_PUBLIC_GA_ID` | Google Analytics measurement ID. Tracking is a no-op when unset. | `""` (disabled) |
 
@@ -46,11 +46,15 @@ template) and is read once in `src/lib/config.ts`.
 
 ## Architecture
 
-- **100% in-browser video pipeline.** There is no server-side renderer. The
+- **100% in-browser rendering pipeline.** There is no server-side renderer. The
   eject animation is a [Remotion](https://www.remotion.dev/) composition
   (`src/remotion/EjectorComposition.tsx`) previewed live with `@remotion/player`
   and exported client-side: MP4 via `@remotion/web-renderer` (WebCodecs), GIF
-  via `gifenc`. The animation timing constants
+  via `gifenc`. After a paid MP4 is rendered, that exact output Blob is uploaded
+  directly to persistent object storage so payment-backend can email the
+  payment recipient an unguessable public download link. Source images are not
+  sent for server rendering, and free GIF output is never uploaded. The
+  animation timing constants
   (`src/lib/animationConstants.ts`) and composition logic are a direct port of
   the original canvas implementation — see the `legacy-canvas` git tag for the
   ground-truth reference (`git show legacy-canvas:src/util/drawAnimation.js`).
@@ -61,9 +65,19 @@ template) and is read once in `src/lib/config.ts`.
   - **payment-backend** (branch `feat/ejector-app`) exposes
     `GET /payment/ejector/:code/paid`, keyed by a client-generated UUID
     persisted in `localStorage` (`ejector-payment-code`), which restores a
-    24-hour unlimited-download window on return visits.
+    24-hour unlimited-download window on return visits. It also owns
+    `POST /payment/ejector/:code/deliveries`, delivery completion/retry, and
+    delivery status routes. Those routes authorize against the payment row,
+    derive its email server-side, issue the direct-upload target, and wait for
+    mail-provider acceptance.
   - GIF export is always free (watermarked). MP4 is paid: $3 for a
-    watermarked 720p file, $5 for a clean 1080p file.
+    watermarked 720p file, $5 for a clean 1080p file. The local download starts
+    only after the provider accepts the one email for that generated video.
+    The browser stores only one recovery record containing the delivery UUID,
+    tier, and filename. After refresh, it can resume a server-confirmed upload
+    or pending email and download the persistent URL after acceptance; records
+    created before upload are cleared because the MP4 Blob is not stored in
+    browser storage.
 - **Newsletter** subscribe/unsubscribe goes directly to `admin.kassellabs.io`'s
   GraphQL API (no proxy through this app's own backend, because there isn't
   one).
