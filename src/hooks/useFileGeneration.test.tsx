@@ -4,11 +4,17 @@ import type { EjectorProps } from "@/types";
 import { staticCharacterFrames } from "@/lib/characterImages";
 import { DEFAULT_CHARACTER_URL } from "@/remotion/EjectorComposition";
 import * as tracking from "@/lib/tracking";
+import { DeliveryError } from "@/lib/delivery/finishVideoDelivery";
 
 const checkRenderSupport = vi.fn();
 const renderEjectionGif = vi.fn();
 const renderEjectionVideo = vi.fn();
 const downloadBlob = vi.fn();
+const finishVideoDelivery = vi.fn();
+const deliveryClient = { client: "delivery-client" };
+const createDeliveryClient = vi.fn(
+  (_baseUrl: string, _paymentCode: string) => deliveryClient,
+);
 
 vi.mock("@/lib/render/capability", () => ({
   checkRenderSupport: (...args: unknown[]) => checkRenderSupport(...args),
@@ -24,9 +30,23 @@ vi.mock("@/lib/render/download", () => ({
   ejectionFilename: (text: string, ext: string) =>
     `${text.replace(/\s+/g, "-")}.${ext}`,
 }));
+vi.mock("@/lib/delivery/client", () => ({
+  createDeliveryClient: (baseUrl: string, paymentCode: string) =>
+    createDeliveryClient(baseUrl, paymentCode),
+}));
+vi.mock("@/lib/delivery/finishVideoDelivery", async (importOriginal) => {
+  const original =
+    await importOriginal<typeof import("@/lib/delivery/finishVideoDelivery")>();
+  return {
+    ...original,
+    finishVideoDelivery: (...args: unknown[]) => finishVideoDelivery(...args),
+  };
+});
 
 import { useFileGeneration } from "./useFileGeneration";
 
+const DELIVERY_ID = "11111111-1111-4111-8111-111111111111";
+const PUBLIC_URL = "https://downloads.test/unguessable/video.mp4";
 const props: EjectorProps = {
   ejectedText: "Red was ejected",
   impostorText: "1 Impostor remains",
@@ -38,9 +58,17 @@ beforeEach(() => {
   checkRenderSupport
     .mockReset()
     .mockResolvedValue({ supported: true, reason: null });
-  renderEjectionGif.mockReset().mockResolvedValue(new Blob(["x"]));
-  renderEjectionVideo.mockReset().mockResolvedValue(new Blob(["x"]));
+  renderEjectionGif.mockReset().mockResolvedValue(new Blob(["gif"]));
+  renderEjectionVideo.mockReset().mockResolvedValue(new Blob(["video"]));
   downloadBlob.mockReset();
+  createDeliveryClient.mockClear();
+  finishVideoDelivery.mockReset().mockResolvedValue({
+    deliveryId: DELIVERY_ID,
+    status: "email_accepted",
+    downloadUrl: PUBLIC_URL,
+    retryable: false,
+  });
+  vi.spyOn(globalThis.crypto, "randomUUID").mockReturnValue(DELIVERY_ID);
   // Spy on the real tracking module (no gtag in jsdom, so it would just
   // console.log) rather than vi.mock-ing it wholesale, per review feedback.
   vi.spyOn(tracking, "trackEvent").mockImplementation(() => {});
@@ -53,7 +81,7 @@ afterEach(() => {
 
 describe("useFileGeneration", () => {
   it("renders the gif and downloads it with the ejection filename", async () => {
-    const { result } = renderHook(() => useFileGeneration());
+    const { result } = renderHook(() => useFileGeneration("code"));
 
     await act(async () => {
       await result.current.generate("gif", props, null);
@@ -74,23 +102,210 @@ describe("useFileGeneration", () => {
       { event_label: "gif", event_category: "download" },
     );
     expect(result.current.generating).toBeNull();
+    expect(result.current.phase).toBeNull();
     expect(result.current.error).toBeNull();
+    expect(finishVideoDelivery).not.toHaveBeenCalled();
   });
 
-  it("renders the mp4 with the given tier and downloads it", async () => {
-    const { result } = renderHook(() => useFileGeneration());
+  it("waits for accepted email before downloading the paid MP4", async () => {
+    const renderedBlob = new Blob(["exact rendered bytes"]);
+    let resolveDelivery!: (value: {
+      deliveryId: string;
+      status: "email_accepted";
+      downloadUrl: string;
+      retryable: false;
+    }) => void;
+    renderEjectionVideo.mockResolvedValue(renderedBlob);
+    finishVideoDelivery.mockReturnValue(
+      new Promise((resolve) => {
+        resolveDelivery = resolve;
+      }),
+    );
+    const { result } = renderHook(() => useFileGeneration("code"));
 
-    await act(async () => {
-      await result.current.generate("mp4", props, "full-hd");
+    let generation!: Promise<void>;
+    act(() => {
+      generation = result.current.generate("mp4", props, "full-hd");
     });
 
+    await waitFor(() => expect(result.current.phase).toBe("finishing"));
+    expect(downloadBlob).not.toHaveBeenCalled();
     expect(renderEjectionVideo).toHaveBeenCalledWith(
       expect.objectContaining({ props, tier: "full-hd" }),
     );
+    expect(renderEjectionVideo).toHaveBeenCalledTimes(1);
+    expect(createDeliveryClient).toHaveBeenCalledWith(expect.any(String), "code");
+    expect(finishVideoDelivery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        blob: renderedBlob,
+        client: deliveryClient,
+        deliveryId: DELIVERY_ID,
+        tier: "full-hd",
+      }),
+    );
+
+    await act(async () => {
+      resolveDelivery({
+        deliveryId: DELIVERY_ID,
+        status: "email_accepted",
+        downloadUrl: PUBLIC_URL,
+        retryable: false,
+      });
+      await generation;
+    });
+
     expect(downloadBlob).toHaveBeenCalledWith(
-      expect.any(Blob),
+      renderedBlob,
       "Red-was-ejected.mp4",
     );
+    expect(finishVideoDelivery.mock.invocationCallOrder[0]).toBeLessThan(
+      downloadBlob.mock.invocationCallOrder[0],
+    );
+    expect(result.current.phase).toBeNull();
+    expect(result.current.canRetryDelivery).toBe(false);
+  });
+
+  it("manual retry reuses the Blob and UUID without rerendering", async () => {
+    const renderedBlob = new Blob(["exact rendered bytes"]);
+    renderEjectionVideo.mockResolvedValue(renderedBlob);
+    finishVideoDelivery
+      .mockRejectedValueOnce(
+        new DeliveryError("failed", {
+          status: "failed",
+          retryable: true,
+        }),
+      )
+      .mockResolvedValueOnce({
+        deliveryId: DELIVERY_ID,
+        status: "email_accepted",
+        downloadUrl: PUBLIC_URL,
+        retryable: false,
+      });
+    const { result } = renderHook(() => useFileGeneration("code"));
+
+    await act(async () => {
+      await result.current.generate("mp4", props, "hd");
+    });
+
+    expect(result.current.error).toBe(
+      "We couldn't finish delivering your video.",
+    );
+    expect(result.current.canRetryDelivery).toBe(true);
+    const firstInput = finishVideoDelivery.mock.calls[0][0];
+
+    await act(async () => {
+      await result.current.retryDelivery();
+    });
+
+    expect(renderEjectionVideo).toHaveBeenCalledTimes(1);
+    expect(finishVideoDelivery).toHaveBeenCalledTimes(2);
+    expect(finishVideoDelivery.mock.calls[1][0].deliveryId).toBe(
+      firstInput.deliveryId,
+    );
+    expect(finishVideoDelivery.mock.calls[1][0].blob).toBe(renderedBlob);
+    expect(downloadBlob).toHaveBeenCalledWith(
+      renderedBlob,
+      "Red-was-ejected.mp4",
+    );
+    expect(result.current.error).toBeNull();
+    expect(result.current.canRetryDelivery).toBe(false);
+  });
+
+  it("exposes rendering then finishing phases for a paid MP4", async () => {
+    let resolveRender!: (blob: Blob) => void;
+    let resolveDelivery!: (value: {
+      deliveryId: string;
+      status: "email_accepted";
+      downloadUrl: string;
+      retryable: false;
+    }) => void;
+    renderEjectionVideo.mockReturnValue(
+      new Promise((resolve) => {
+        resolveRender = resolve;
+      }),
+    );
+    finishVideoDelivery.mockReturnValue(
+      new Promise((resolve) => {
+        resolveDelivery = resolve;
+      }),
+    );
+    const { result } = renderHook(() => useFileGeneration("code"));
+
+    let generation!: Promise<void>;
+    act(() => {
+      generation = result.current.generate("mp4", props, "hd");
+    });
+    await waitFor(() => expect(result.current.phase).toBe("rendering"));
+
+    await act(async () => {
+      resolveRender(new Blob(["video"]));
+    });
+    await waitFor(() => expect(result.current.phase).toBe("finishing"));
+
+    await act(async () => {
+      resolveDelivery({
+        deliveryId: DELIVERY_ID,
+        status: "email_accepted",
+        downloadUrl: PUBLIC_URL,
+        retryable: false,
+      });
+      await generation;
+    });
+    expect(result.current.phase).toBeNull();
+  });
+
+  it("clears retained delivery data after a non-retryable failure", async () => {
+    finishVideoDelivery.mockRejectedValue(
+      new DeliveryError("expired", {
+        status: "failed",
+        retryable: false,
+      }),
+    );
+    const { result } = renderHook(() => useFileGeneration("code"));
+
+    await act(async () => {
+      await result.current.generate("mp4", props, "hd");
+    });
+    await act(async () => {
+      await result.current.retryDelivery();
+    });
+
+    expect(result.current.error).toBe(
+      "We couldn't finish delivering your video.",
+    );
+    expect(result.current.canRetryDelivery).toBe(false);
+    expect(finishVideoDelivery).toHaveBeenCalledTimes(1);
+    expect(downloadBlob).not.toHaveBeenCalled();
+  });
+
+  it("guards against overlapping manual delivery retries", async () => {
+    finishVideoDelivery
+      .mockRejectedValueOnce(
+        new DeliveryError("failed", {
+          status: "failed",
+          retryable: true,
+        }),
+      )
+      .mockResolvedValue({
+        deliveryId: DELIVERY_ID,
+        status: "email_accepted",
+        downloadUrl: PUBLIC_URL,
+        retryable: false,
+      });
+    const { result } = renderHook(() => useFileGeneration("code"));
+
+    await act(async () => {
+      await result.current.generate("mp4", props, "hd");
+    });
+    await act(async () => {
+      await Promise.all([
+        result.current.retryDelivery(),
+        result.current.retryDelivery(),
+      ]);
+    });
+
+    expect(finishVideoDelivery).toHaveBeenCalledTimes(2);
+    expect(renderEjectionVideo).toHaveBeenCalledTimes(1);
   });
 
   it("never calls render when the capability check reports unsupported", async () => {
@@ -98,7 +313,7 @@ describe("useFileGeneration", () => {
       supported: false,
       reason: "no webcodecs",
     });
-    const { result } = renderHook(() => useFileGeneration());
+    const { result } = renderHook(() => useFileGeneration("code"));
 
     await act(async () => {
       await result.current.generate("gif", props, null);
@@ -122,7 +337,7 @@ describe("useFileGeneration", () => {
       },
     );
 
-    const { result } = renderHook(() => useFileGeneration());
+    const { result } = renderHook(() => useFileGeneration("code"));
 
     act(() => {
       void result.current.generate("gif", props, null);
@@ -141,7 +356,7 @@ describe("useFileGeneration", () => {
 
   it("sets a generic error and still resets state when rendering throws", async () => {
     renderEjectionGif.mockRejectedValue(new Error("boom"));
-    const { result } = renderHook(() => useFileGeneration());
+    const { result } = renderHook(() => useFileGeneration("code"));
 
     await act(async () => {
       await result.current.generate("gif", props, null);
@@ -157,7 +372,7 @@ describe("useFileGeneration", () => {
       supported: false,
       reason: "nope",
     });
-    const { result } = renderHook(() => useFileGeneration());
+    const { result } = renderHook(() => useFileGeneration("code"));
 
     await act(async () => {
       await result.current.generate("gif", props, null);
@@ -185,7 +400,7 @@ describe("useFileGeneration", () => {
       }),
     );
 
-    const { result } = renderHook(() => useFileGeneration());
+    const { result } = renderHook(() => useFileGeneration("code"));
 
     let first!: Promise<void>;
     let second!: Promise<void>;
