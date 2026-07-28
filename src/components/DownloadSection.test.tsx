@@ -255,4 +255,76 @@ describe("DownloadSection", () => {
     expect(deliveryIds).toHaveLength(2);
     expect(deliveryIds[1]).toBe(deliveryIds[0]);
   });
+
+  it("does not expose retained delivery retry on an unsupported-browser error", async () => {
+    let retryRequestCount = 0;
+    server.use(
+      http.post(
+        "*/payment/ejector/:code/deliveries",
+        async ({ request }) => {
+          const { deliveryId } = (await request.json()) as {
+            deliveryId: string;
+          };
+          return HttpResponse.json({
+            deliveryId,
+            status: "failed",
+            downloadUrl: "https://downloads.test/video.mp4",
+            retryable: true,
+            error: { message: "temporary failure" },
+          });
+        },
+      ),
+      http.post(
+        "*/payment/ejector/:code/deliveries/:deliveryId/retry",
+        ({ params }) => {
+          retryRequestCount += 1;
+          return HttpResponse.json({
+            deliveryId: params.deliveryId,
+            status: "failed",
+            downloadUrl: "https://downloads.test/video.mp4",
+            retryable: true,
+            error: { message: "temporary failure" },
+          });
+        },
+      ),
+    );
+    render(
+      <PaymentProvider>
+        <PreSeededPaid>
+          <DownloadSection props={props} />
+        </PreSeededPaid>
+      </PaymentProvider>,
+    );
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Download Video" }),
+    );
+    expect(
+      await screen.findByRole("button", { name: "Retry delivery" }),
+    ).toBeVisible();
+    await userEvent.click(screen.getByRole("button", { name: "Close" }));
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("button", { name: "Retry delivery" }),
+      ).not.toBeInTheDocument(),
+    );
+
+    checkRenderSupport.mockResolvedValue({
+      supported: false,
+      reason: "no webcodecs",
+    });
+    await userEvent.click(
+      screen.getByRole("button", { name: "Download Video" }),
+    );
+
+    expect(
+      await screen.findByText(
+        "Video export needs a Chromium-based browser (Chrome, Edge, Brave) or recent Safari. The preview still works everywhere.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Retry delivery" }),
+    ).not.toBeInTheDocument();
+    expect(retryRequestCount).toBe(1);
+  });
 });

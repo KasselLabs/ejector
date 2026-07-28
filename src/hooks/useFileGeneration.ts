@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { checkRenderSupport } from "@/lib/render/capability";
 import { renderEjectionGif } from "@/lib/render/renderGif";
 import { renderEjectionVideo } from "@/lib/render/renderVideo";
@@ -66,11 +66,31 @@ export function useFileGeneration(
   const [canRetryDelivery, setCanRetryDelivery] = useState(false);
   const runningRef = useRef(false);
   const pendingDeliveryRef = useRef<PendingDelivery | null>(null);
+  const mountedRef = useRef(true);
+  const operationRef = useRef(0);
 
-  const clearError = useCallback(() => setError(null), []);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      operationRef.current += 1;
+    };
+  }, []);
+
+  const isActiveOperation = useCallback(
+    (operationId: number) =>
+      mountedRef.current && operationRef.current === operationId,
+    [],
+  );
+
+  const clearError = useCallback(() => {
+    setError(null);
+    setCanRetryDelivery(false);
+  }, []);
 
   const deliver = useCallback(
-    async (pending: PendingDelivery) => {
+    async (pending: PendingDelivery, operationId: number) => {
+      if (!isActiveOperation(operationId)) return;
       try {
         await finishVideoDelivery({
           client: createDeliveryClient(paymentApiUrl, pending.paymentCode),
@@ -78,6 +98,7 @@ export function useFileGeneration(
           deliveryId: pending.deliveryId,
           tier: pending.tier,
         });
+        if (!isActiveOperation(operationId)) return;
         pendingDeliveryRef.current = null;
         setCanRetryDelivery(false);
         downloadBlob(pending.blob, pending.filename);
@@ -87,6 +108,7 @@ export function useFileGeneration(
         });
         playSound("/task_Complete.mp3");
       } catch (deliveryError) {
+        if (!isActiveOperation(operationId)) return;
         const retryable = canRetry(deliveryError);
         if (!retryable) {
           pendingDeliveryRef.current = null;
@@ -95,7 +117,7 @@ export function useFileGeneration(
         setError(t("We couldn't finish delivering your video."));
       }
     },
-    [t],
+    [isActiveOperation, t],
   );
 
   const generate = useCallback(
@@ -109,9 +131,13 @@ export function useFileGeneration(
       // never slip through and start a concurrent render.
       if (runningRef.current) return;
       runningRef.current = true;
+      const operationId = ++operationRef.current;
+      setError(null);
+      setCanRetryDelivery(false);
 
       try {
         const support = await checkRenderSupport();
+        if (!isActiveOperation(operationId)) return;
         if (!support.supported) {
           setError(
             t(
@@ -121,8 +147,6 @@ export function useFileGeneration(
           return;
         }
 
-        setError(null);
-        setCanRetryDelivery(false);
         setGenerating(kind);
         setPhase("rendering");
         setProgress(0);
@@ -134,13 +158,21 @@ export function useFileGeneration(
 
         const blob =
           kind === "gif"
-            ? await renderEjectionGif({ props, onProgress: setProgress })
+            ? await renderEjectionGif({
+                props,
+                onProgress: (value) => {
+                  if (isActiveOperation(operationId)) setProgress(value);
+                },
+              })
             : await renderEjectionVideo({
                 props,
                 tier: tier ?? "hd",
-                onProgress: setProgress,
+                onProgress: (value) => {
+                  if (isActiveOperation(operationId)) setProgress(value);
+                },
               });
 
+        if (!isActiveOperation(operationId)) return;
         const filename = ejectionFilename(props.ejectedText, kind);
         if (kind === "mp4") {
           if (!tier || !paymentCode) {
@@ -158,7 +190,7 @@ export function useFileGeneration(
           };
           pendingDeliveryRef.current = pending;
           setPhase("finishing");
-          await deliver(pending);
+          await deliver(pending, operationId);
           return;
         }
 
@@ -169,40 +201,47 @@ export function useFileGeneration(
         });
         playSound("/task_Complete.mp3");
       } catch (generationError) {
+        if (!isActiveOperation(operationId)) return;
         if (generationError instanceof DeliveryError) {
           pendingDeliveryRef.current = null;
           setCanRetryDelivery(false);
           setError(t("We couldn't finish delivering your video."));
         } else {
+          setCanRetryDelivery(false);
           setError(t("Something went wrong. Please try again."));
         }
       } finally {
-        runningRef.current = false;
-        setGenerating(null);
-        setPhase(null);
-        setProgress(0);
+        if (isActiveOperation(operationId)) {
+          runningRef.current = false;
+          setGenerating(null);
+          setPhase(null);
+          setProgress(0);
+        }
       }
     },
-    [deliver, paymentCode, t],
+    [deliver, isActiveOperation, paymentCode, t],
   );
 
   const retryDelivery = useCallback(async () => {
     const pending = pendingDeliveryRef.current;
     if (!pending || runningRef.current) return;
     runningRef.current = true;
+    const operationId = ++operationRef.current;
     setError(null);
     setCanRetryDelivery(false);
     setGenerating("mp4");
     setPhase("finishing");
     try {
-      await deliver(pending);
+      await deliver(pending, operationId);
     } finally {
-      runningRef.current = false;
-      setGenerating(null);
-      setPhase(null);
-      setProgress(0);
+      if (isActiveOperation(operationId)) {
+        runningRef.current = false;
+        setGenerating(null);
+        setPhase(null);
+        setProgress(0);
+      }
     }
-  }, [deliver]);
+  }, [deliver, isActiveOperation]);
 
   return {
     generating,

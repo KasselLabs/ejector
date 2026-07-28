@@ -211,6 +211,108 @@ describe("useFileGeneration", () => {
     expect(result.current.canRetryDelivery).toBe(false);
   });
 
+  it("does not expose a retained retry through a later capability error", async () => {
+    finishVideoDelivery.mockRejectedValueOnce(
+      new DeliveryError("failed", {
+        status: "failed",
+        retryable: true,
+      }),
+    );
+    const { result } = renderHook(() => useFileGeneration("code"));
+
+    await act(async () => {
+      await result.current.generate("mp4", props, "hd");
+    });
+    expect(result.current.canRetryDelivery).toBe(true);
+
+    act(() => {
+      result.current.clearError();
+    });
+    checkRenderSupport.mockResolvedValue({
+      supported: false,
+      reason: "no webcodecs",
+    });
+    await act(async () => {
+      await result.current.generate("gif", props, null);
+    });
+
+    expect(result.current.error).toBe(
+      "Video export needs a Chromium-based browser (Chrome, Edge, Brave) or recent Safari. The preview still works everywhere.",
+    );
+    expect(result.current.canRetryDelivery).toBe(false);
+    expect(finishVideoDelivery).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not start paid delivery when rendering resolves after unmount", async () => {
+    let resolveRender!: (blob: Blob) => void;
+    renderEjectionVideo.mockReturnValue(
+      new Promise((resolve) => {
+        resolveRender = resolve;
+      }),
+    );
+    const { result, unmount } = renderHook(() => useFileGeneration("code"));
+
+    let generation!: Promise<void>;
+    act(() => {
+      generation = result.current.generate("mp4", props, "full-hd");
+    });
+    await waitFor(() =>
+      expect(renderEjectionVideo).toHaveBeenCalledTimes(1),
+    );
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
+
+    unmount();
+    await act(async () => {
+      resolveRender(new Blob(["late video"]));
+      await generation;
+    });
+
+    expect(finishVideoDelivery).not.toHaveBeenCalled();
+    expect(globalThis.crypto.randomUUID).not.toHaveBeenCalled();
+    expect(downloadBlob).not.toHaveBeenCalled();
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not download or play success audio when delivery settles after unmount", async () => {
+    let resolveDelivery!: (value: {
+      deliveryId: string;
+      status: "email_accepted";
+      downloadUrl: string;
+      retryable: false;
+    }) => void;
+    finishVideoDelivery.mockReturnValue(
+      new Promise((resolve) => {
+        resolveDelivery = resolve;
+      }),
+    );
+    const { result, unmount } = renderHook(() => useFileGeneration("code"));
+
+    let generation!: Promise<void>;
+    act(() => {
+      generation = result.current.generate("mp4", props, "hd");
+    });
+    await waitFor(() => expect(finishVideoDelivery).toHaveBeenCalledTimes(1));
+    expect(globalThis.crypto.randomUUID).toHaveBeenCalledTimes(1);
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
+
+    unmount();
+    await act(async () => {
+      resolveDelivery({
+        deliveryId: DELIVERY_ID,
+        status: "email_accepted",
+        downloadUrl: PUBLIC_URL,
+        retryable: false,
+      });
+      await generation;
+    });
+
+    expect(renderEjectionVideo).toHaveBeenCalledTimes(1);
+    expect(finishVideoDelivery).toHaveBeenCalledTimes(1);
+    expect(globalThis.crypto.randomUUID).toHaveBeenCalledTimes(1);
+    expect(downloadBlob).not.toHaveBeenCalled();
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
+  });
+
   it("exposes rendering then finishing phases for a paid MP4", async () => {
     let resolveRender!: (blob: Blob) => void;
     let resolveDelivery!: (value: {
