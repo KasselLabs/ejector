@@ -45,9 +45,106 @@ test("Download GIF renders in the browser and produces a file", async ({
 // and unlike the GIF it also encodes the audio track, which is its own failure
 // surface.
 test("a paid user's Download Video renders an MP4", async ({ page }) => {
-  await page.route("**/payment/ejector/**", (route) =>
-    route.fulfill({ json: { paid: true, dollarValue: 5 } }),
-  );
+  test.setTimeout(180_000);
+
+  let deliveryId = "";
+  let checksum = "";
+  let releaseAcceptedStatus!: () => void;
+  const acceptedStatusGate = new Promise<void>((resolve) => {
+    releaseAcceptedStatus = resolve;
+  });
+  const requestOrder: string[] = [];
+  let downloadStarted = false;
+
+  page.on("download", () => {
+    downloadStarted = true;
+  });
+
+  await page.route("https://storage.test/ejector-video.mp4", async (route) => {
+    const request = route.request();
+    requestOrder.push("upload");
+    expect(request.method()).toBe("PUT");
+    expect(request.headers()["content-type"]).toBe("video/mp4");
+    expect(request.headers()["x-amz-checksum-sha256"]).toBe(checksum);
+    await route.fulfill({ status: 200 });
+  });
+
+  await page.route("**/payment/ejector/**", async (route) => {
+    const request = route.request();
+    const pathname = new URL(request.url()).pathname;
+
+    if (pathname.endsWith("/paid")) {
+      requestOrder.push("paid");
+      await route.fulfill({ json: { paid: true, dollarValue: 5 } });
+      return;
+    }
+
+    if (request.method() === "POST" && pathname.endsWith("/deliveries")) {
+      requestOrder.push("initialize");
+      const body = request.postDataJSON() as {
+        deliveryId: string;
+        tier: string;
+        contentType: string;
+        contentLength: number;
+        checksum: string;
+      };
+      deliveryId = body.deliveryId;
+      checksum = body.checksum;
+      expect(body.tier).toBe("full-hd");
+      expect(body.contentType).toBe("video/mp4");
+      expect(body.contentLength).toBeGreaterThan(0);
+      await route.fulfill({
+        status: 201,
+        json: {
+          deliveryId,
+          status: "created",
+          downloadUrl: "https://downloads.test/ejector-video.mp4",
+          uploadUrl: "https://storage.test/ejector-video.mp4",
+          uploadHeaders: {
+            "content-type": "video/mp4",
+            "x-amz-checksum-sha256": checksum,
+          },
+          retryable: true,
+        },
+      });
+      return;
+    }
+
+    if (
+      request.method() === "POST" &&
+      pathname.endsWith(`/${deliveryId}/complete`)
+    ) {
+      requestOrder.push("complete");
+      await route.fulfill({
+        json: {
+          deliveryId,
+          status: "email_pending",
+          downloadUrl: "https://downloads.test/ejector-video.mp4",
+          retryable: false,
+        },
+      });
+      return;
+    }
+
+    if (
+      request.method() === "GET" &&
+      pathname.endsWith(`/${deliveryId}`)
+    ) {
+      requestOrder.push("status");
+      await acceptedStatusGate;
+      await route.fulfill({
+        json: {
+          deliveryId,
+          status: "email_accepted",
+          downloadUrl: "https://downloads.test/ejector-video.mp4",
+          retryable: false,
+        },
+      });
+      return;
+    }
+
+    await route.abort("failed");
+  });
 
   await page.goto("/");
   const videoButton = page.getByRole("button", { name: "Download Video" });
@@ -55,6 +152,15 @@ test("a paid user's Download Video renders an MP4", async ({ page }) => {
 
   const downloadPromise = page.waitForEvent("download", { timeout: 180_000 });
   await videoButton.click();
+  await expect.poll(() => requestOrder, { timeout: 150_000 }).toEqual([
+    "paid",
+    "initialize",
+    "upload",
+    "complete",
+    "status",
+  ]);
+  expect(downloadStarted).toBe(false);
+  releaseAcceptedStatus();
 
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/\.mp4$/);

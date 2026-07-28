@@ -12,9 +12,17 @@ import type { EjectorProps, PaidTier } from "@/types";
 
 export function DownloadSection({ props }: { props: EjectorProps }) {
   const t = useT();
-  const { paid, tier } = usePayment();
-  const { generating, progress, error, clearError, generate } =
-    useFileGeneration();
+  const { paid, tier, code } = usePayment();
+  const {
+    generating,
+    phase,
+    progress,
+    error,
+    canRetryDelivery,
+    clearError,
+    generate,
+    retryDelivery,
+  } = useFileGeneration(code);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const busy = generating !== null;
@@ -61,7 +69,13 @@ export function DownloadSection({ props }: { props: EjectorProps }) {
 
       {busy && (
         <div className="flex w-full flex-col gap-1">
-          <span className="text-xs text-white/50">{t("Generating")}</span>
+          <span className="text-xs text-white/50">
+            {t(
+              phase === "finishing"
+                ? "Your generation is being finished."
+                : "Generating",
+            )}
+          </span>
           <Progress value={progress * 100} />
         </div>
       )}
@@ -71,7 +85,12 @@ export function DownloadSection({ props }: { props: EjectorProps }) {
         onClose={() => setDialogOpen(false)}
         onPaid={handlePaid}
       />
-      <ErrorDialog message={error} onClose={clearError} />
+      <ErrorDialog
+        message={error}
+        onClose={clearError}
+        actionLabel={canRetryDelivery ? "Retry delivery" : undefined}
+        onAction={canRetryDelivery ? retryDelivery : undefined}
+      />
     </div>
   );
 }
