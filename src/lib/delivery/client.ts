@@ -10,7 +10,7 @@ import type {
 } from "./types";
 
 export interface CreateDeliveryClientOptions {
-  retry?: RetryOptions;
+  retry?: Pick<RetryOptions, "sleep">;
   fetch?: typeof fetch;
 }
 
@@ -170,6 +170,14 @@ export function createDeliveryClient(
   paymentCode: string,
   options: CreateDeliveryClientOptions = {},
 ): DeliveryClient {
+  if (
+    options.retry &&
+    Object.hasOwn(options.retry as object, "signal")
+  ) {
+    throw new TypeError(
+      "Delivery cancellation must be supplied per request.",
+    );
+  }
   const root = baseUrl.replace(/\/+$/, "");
   const deliveryPath = `${root}/payment/ejector/${encodeURIComponent(paymentCode)}/deliveries`;
   const fetchImpl = options.fetch ?? globalThis.fetch;
@@ -178,7 +186,7 @@ export function createDeliveryClient(
     requestOptions?: DeliveryRequestOptions,
   ): Promise<T> =>
     withRetry(operation, {
-      ...options.retry,
+      sleep: options.retry?.sleep,
       signal: requestOptions?.signal,
     });
 

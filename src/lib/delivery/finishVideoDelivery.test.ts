@@ -3,6 +3,7 @@ import {
   DeliveryError,
   finishVideoDelivery,
 } from "./finishVideoDelivery";
+import { withRetry } from "./retry";
 import type {
   DeliveryClient,
   DeliveryResponse,
@@ -70,17 +71,12 @@ describe("finishVideoDelivery", () => {
         contentLength: 3,
         checksum: CHECKSUM,
       },
-      { signal: expect.any(AbortSignal) },
     );
     expect(client.upload).toHaveBeenCalledWith(
       initialized,
       blob,
-      { signal: expect.any(AbortSignal) },
     );
-    expect(client.complete).toHaveBeenCalledWith(
-      DELIVERY_ID,
-      { signal: expect.any(AbortSignal) },
-    );
+    expect(client.complete).toHaveBeenCalledWith(DELIVERY_ID);
     expect(client.getStatus).not.toHaveBeenCalled();
     expect(client.retry).not.toHaveBeenCalled();
   });
@@ -128,22 +124,14 @@ describe("finishVideoDelivery", () => {
       }),
     ).resolves.toEqual(accepted);
 
-    expect(client.retry).toHaveBeenCalledWith(
-      DELIVERY_ID,
-      { signal: expect.any(AbortSignal) },
-    );
+    expect(client.retry).toHaveBeenCalledWith(DELIVERY_ID);
     expect(client.upload).toHaveBeenCalledWith(
       retryTarget,
       blob,
-      { signal: expect.any(AbortSignal) },
     );
-    expect(client.complete).toHaveBeenCalledWith(
-      DELIVERY_ID,
-      { signal: expect.any(AbortSignal) },
-    );
+    expect(client.complete).toHaveBeenCalledWith(DELIVERY_ID);
     expect(client.initialize).toHaveBeenCalledWith(
       expect.objectContaining({ deliveryId: DELIVERY_ID }),
-      { signal: expect.any(AbortSignal) },
     );
   });
 
@@ -163,10 +151,7 @@ describe("finishVideoDelivery", () => {
     ).resolves.toEqual(accepted);
 
     expect(client.upload).not.toHaveBeenCalled();
-    expect(client.complete).toHaveBeenCalledWith(
-      DELIVERY_ID,
-      { signal: expect.any(AbortSignal) },
-    );
+    expect(client.complete).toHaveBeenCalledWith(DELIVERY_ID);
   });
 
   it("polls pending and uploaded states at a separate 1-second interval", async () => {
@@ -197,6 +182,49 @@ describe("finishVideoDelivery", () => {
       DELIVERY_ID,
       { signal: expect.any(AbortSignal) },
     );
+  });
+
+  it("starts a fresh full deadline only after slow pre-poll delivery work", async () => {
+    let now = 0;
+    let deadlineStartedAt: number | undefined;
+    const initialized = response("created", {
+      uploadUrl: "https://storage.test/upload",
+      uploadHeaders: { "x-amz-checksum-sha256": CHECKSUM },
+    });
+    const client = clientWith(initialized, {
+      upload: vi.fn(async () => {
+        now += 5000;
+      }),
+      complete: vi.fn().mockResolvedValue(response("email_pending")),
+      getStatus: vi.fn().mockResolvedValue(response("email_accepted")),
+    });
+    const pollSleep = vi.fn(async (milliseconds: number) => {
+      now += milliseconds;
+    });
+    const scheduleTimeout = vi.fn(
+      (callback: () => void, milliseconds: number) => {
+        deadlineStartedAt = now;
+        return setTimeout(callback, milliseconds);
+      },
+    );
+
+    await expect(
+      finishVideoDelivery({
+        client,
+        blob,
+        deliveryId: DELIVERY_ID,
+        tier: "full-hd",
+        pollTimeoutMs: 2500,
+        pollSleep,
+        now: () => now,
+        scheduleTimeout,
+      }),
+    ).resolves.toMatchObject({ status: "email_accepted" });
+
+    expect(deadlineStartedAt).toBe(5000);
+    expect(scheduleTimeout).toHaveBeenCalledTimes(1);
+    expect(scheduleTimeout).toHaveBeenCalledWith(expect.any(Function), 2500);
+    expect(pollSleep).toHaveBeenCalledWith(1000);
   });
 
   it("rejects an acceptance that arrives after the hard orchestration deadline", async () => {
@@ -237,6 +265,89 @@ describe("finishVideoDelivery", () => {
     await rejection;
     expect(statusSignal?.aborted).toBe(true);
     await vi.advanceTimersByTimeAsync(3000);
+  });
+
+  it("counts the one-second poll delay against the polling deadline", async () => {
+    let fireDeadline: (() => void) | undefined;
+    let resolvePollStarted: (() => void) | undefined;
+    const pollStarted = new Promise<void>((resolve) => {
+      resolvePollStarted = resolve;
+    });
+    const pollSleep = vi.fn(() => {
+      resolvePollStarted?.();
+      return new Promise<void>(() => undefined);
+    });
+    const client = clientWith(response("email_pending"));
+    const finishing = finishVideoDelivery({
+      client,
+      blob,
+      deliveryId: DELIVERY_ID,
+      tier: "full-hd",
+      pollTimeoutMs: 500,
+      pollSleep,
+      scheduleTimeout: (callback) => {
+        fireDeadline = callback;
+        return 0 as unknown as ReturnType<typeof setTimeout>;
+      },
+      cancelTimeout: vi.fn(),
+    });
+    const rejection = expect(finishing).rejects.toEqual(
+      expect.objectContaining<Partial<DeliveryError>>({
+        name: "DeliveryError",
+        retryable: true,
+      }),
+    );
+    await pollStarted;
+    fireDeadline?.();
+
+    await rejection;
+    expect(pollSleep).toHaveBeenCalledWith(1000);
+    expect(client.getStatus).not.toHaveBeenCalled();
+  });
+
+  it("aborts getStatus retry backoff inside the polling deadline", async () => {
+    vi.useFakeTimers();
+    let statusSignal: AbortSignal | undefined;
+    let resolveStatusStarted: (() => void) | undefined;
+    const statusStarted = new Promise<void>((resolve) => {
+      resolveStatusStarted = resolve;
+    });
+    const statusAttempt = vi
+      .fn<() => Promise<DeliveryResponse>>()
+      .mockRejectedValue(new TypeError("offline"));
+    const client = clientWith(response("email_pending"), {
+      getStatus: vi.fn((_deliveryId, options) => {
+        statusSignal = options?.signal;
+        resolveStatusStarted?.();
+        return withRetry(statusAttempt, {
+          signal: options?.signal,
+          sleep: (milliseconds) =>
+            new Promise((resolve) => setTimeout(resolve, milliseconds)),
+        });
+      }),
+    });
+
+    const finishing = finishVideoDelivery({
+      client,
+      blob,
+      deliveryId: DELIVERY_ID,
+      tier: "full-hd",
+      pollTimeoutMs: 2500,
+      pollSleep: vi.fn().mockResolvedValue(undefined),
+    });
+    const rejection = expect(finishing).rejects.toEqual(
+      expect.objectContaining<Partial<DeliveryError>>({
+        name: "DeliveryError",
+        retryable: true,
+      }),
+    );
+    await statusStarted;
+    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(1500);
+
+    await rejection;
+    expect(statusSignal?.aborted).toBe(true);
+    expect(statusAttempt).toHaveBeenCalledTimes(2);
   });
 
   it("throws a typed delivery error instead of returning a failed state", async () => {

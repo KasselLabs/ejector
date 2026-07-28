@@ -130,27 +130,22 @@ const runWithDeadline = <T>(
   });
 };
 
-const finishBeforeDeadline = async ({
+const finishUntilPolling = async ({
   client,
   blob,
   deliveryId,
   tier,
-  pollIntervalMs = DEFAULT_POLL_INTERVAL_MS,
-  pollTimeoutMs = DEFAULT_POLL_TIMEOUT_MS,
-  pollSleep = defaultPollSleep,
-  now = Date.now,
-}: FinishVideoDeliveryInput, signal: AbortSignal): Promise<AcceptedDelivery> => {
-  const deadline = now() + pollTimeoutMs;
+}: FinishVideoDeliveryInput): Promise<DeliveryResponse> => {
   const checksum = await sha256Base64(blob);
   let current = await client.initialize({
     deliveryId,
     tier,
     contentLength: blob.size,
     checksum,
-  }, { signal });
+  });
 
   if (current.status === "failed") {
-    current = await client.retry(deliveryId, { signal });
+    current = await client.retry(deliveryId);
   }
 
   const hasUploadTarget = Boolean(current.uploadUrl && current.uploadHeaders);
@@ -161,19 +156,19 @@ const finishBeforeDeadline = async ({
     (current.status === "created" || current.status === "failed")
   ) {
     try {
-      await client.upload(current, blob, { signal });
+      await client.upload(current, blob);
       shouldComplete = true;
     } catch (error) {
       if (!isAmbiguousUploadError(error)) {
         throw error;
       }
       try {
-        current = await client.complete(deliveryId, { signal });
+        current = await client.complete(deliveryId);
       } catch (completionError) {
         if (!isAmbiguousUploadError(completionError)) {
           throw completionError;
         }
-        current = await client.getStatus(deliveryId, { signal });
+        current = await client.getStatus(deliveryId);
       }
       shouldComplete = false;
     }
@@ -187,9 +182,26 @@ const finishBeforeDeadline = async ({
   }
 
   if (shouldComplete) {
-    current = await client.complete(deliveryId, { signal });
+    current = await client.complete(deliveryId);
   }
 
+  return current;
+};
+
+const pollUntilAccepted = async (
+  {
+    client,
+    deliveryId,
+    pollIntervalMs = DEFAULT_POLL_INTERVAL_MS,
+    pollTimeoutMs = DEFAULT_POLL_TIMEOUT_MS,
+    pollSleep = defaultPollSleep,
+    now = Date.now,
+  }: FinishVideoDeliveryInput,
+  initial: DeliveryResponse,
+  signal: AbortSignal,
+): Promise<AcceptedDelivery> => {
+  let current = initial;
+  const deadline = now() + pollTimeoutMs;
   while (current.status === "email_pending" || current.status === "uploaded") {
     if (now() >= deadline) {
       throw deadlineError();
@@ -214,10 +226,19 @@ export function finishVideoDelivery(
     cancelTimeout = defaultCancelTimeout,
   } = input;
 
-  return runWithDeadline(
-    (signal) => finishBeforeDeadline(input, signal),
-    pollTimeoutMs,
-    scheduleTimeout,
-    cancelTimeout,
-  );
+  return finishUntilPolling(input).then((current) => {
+    if (current.status !== "email_pending" && current.status !== "uploaded") {
+      if (current.status !== "email_accepted") {
+        throw DeliveryError.from(current);
+      }
+      return current as AcceptedDelivery;
+    }
+
+    return runWithDeadline(
+      (signal) => pollUntilAccepted(input, current, signal),
+      pollTimeoutMs,
+      scheduleTimeout,
+      cancelTimeout,
+    );
+  });
 }

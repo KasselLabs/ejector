@@ -1,8 +1,16 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  describe,
+  expect,
+  expectTypeOf,
+  it,
+  vi,
+} from "vitest";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
 import {
   createDeliveryClient,
+  type CreateDeliveryClientOptions,
   DeliveryProtocolError,
 } from "./client";
 import { HttpDeliveryError } from "./retry";
@@ -42,6 +50,27 @@ afterEach(() => {
 });
 
 describe("createDeliveryClient", () => {
+  it("exposes only retry sleep configuration at the client factory", () => {
+    type FactoryRetryKeys =
+      keyof NonNullable<CreateDeliveryClientOptions["retry"]>;
+
+    expectTypeOf<FactoryRetryKeys>().toEqualTypeOf<"sleep">();
+  });
+
+  it("rejects an untyped factory retry signal instead of silently ignoring it", () => {
+    const unsafeOptions = {
+      retry: { signal: new AbortController().signal },
+    } as unknown as CreateDeliveryClientOptions;
+
+    expect(() =>
+      createDeliveryClient(
+        "http://payment-api.test",
+        "code",
+        unsafeOptions,
+      ),
+    ).toThrow("per request");
+  });
+
   it("whitelists initialize fields so runtime email and extras never cross the network", async () => {
     server.use(
       http.post(
