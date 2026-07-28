@@ -119,7 +119,7 @@ describe("useFileGeneration", () => {
         deliveryId: DELIVERY_ID,
         status: "email_pending",
         downloadUrl: PUBLIC_URL,
-        retryable: true,
+        retryable: false,
       })
       .mockResolvedValueOnce({
         deliveryId: DELIVERY_ID,
@@ -217,6 +217,176 @@ describe("useFileGeneration", () => {
       expect(clearPendingDelivery).toHaveBeenCalledTimes(1),
     );
     expect(downloadPublicUrl).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    new TypeError("offline"),
+    new HttpDeliveryError(503, true),
+  ])(
+    "retains recovery after the delivery client exhausts a retryable %s",
+    async (recoveryError) => {
+      readPendingDelivery.mockReturnValue({
+        deliveryId: DELIVERY_ID,
+        tier: "hd",
+        filename: "Blue-was-ejected.mp4",
+      });
+      getStatus.mockRejectedValue(recoveryError);
+      const { result } = renderHook(() =>
+        useFileGeneration("payment-code"),
+      );
+
+      await waitFor(() =>
+        expect(result.current.error).toBe(
+          "We couldn't finish delivering your video.",
+        ),
+      );
+
+      expect(clearPendingDelivery).not.toHaveBeenCalled();
+      expect(downloadPublicUrl).not.toHaveBeenCalled();
+    },
+  );
+
+  it("clears recovery after a non-retryable expiration error", async () => {
+    readPendingDelivery.mockReturnValue({
+      deliveryId: DELIVERY_ID,
+      tier: "hd",
+      filename: "Blue-was-ejected.mp4",
+    });
+    getStatus.mockRejectedValue(new HttpDeliveryError(410, false));
+    const { result } = renderHook(() =>
+      useFileGeneration("payment-code"),
+    );
+
+    await waitFor(() =>
+      expect(result.current.error).toBe(
+        "We couldn't finish delivering your video.",
+      ),
+    );
+
+    expect(clearPendingDelivery).toHaveBeenCalledTimes(1);
+    expect(downloadPublicUrl).not.toHaveBeenCalled();
+  });
+
+  it("clears recovery after a terminal failed response", async () => {
+    readPendingDelivery.mockReturnValue({
+      deliveryId: DELIVERY_ID,
+      tier: "full-hd",
+      filename: "Red-was-ejected.mp4",
+    });
+    getStatus.mockResolvedValue({
+      deliveryId: DELIVERY_ID,
+      status: "failed",
+      downloadUrl: PUBLIC_URL,
+      retryable: false,
+      error: { message: "Completion window expired." },
+    });
+    const { result } = renderHook(() =>
+      useFileGeneration("payment-code"),
+    );
+
+    await waitFor(() =>
+      expect(result.current.error).toBe(
+        "We couldn't finish delivering your video.",
+      ),
+    );
+
+    expect(clearPendingDelivery).toHaveBeenCalledTimes(1);
+    expect(downloadPublicUrl).not.toHaveBeenCalled();
+  });
+
+  it("aborts at the hard recovery deadline and retains retryable recovery", async () => {
+    vi.useFakeTimers();
+    let pollSignal: AbortSignal | undefined;
+    readPendingDelivery.mockReturnValue({
+      deliveryId: DELIVERY_ID,
+      tier: "full-hd",
+      filename: "Red-was-ejected.mp4",
+    });
+    getStatus
+      .mockResolvedValueOnce({
+        deliveryId: DELIVERY_ID,
+        status: "email_pending",
+        downloadUrl: PUBLIC_URL,
+        retryable: false,
+      })
+      .mockImplementationOnce((_deliveryId, options) => {
+        pollSignal = options?.signal;
+        return new Promise((_resolve, reject) => {
+          pollSignal?.addEventListener(
+            "abort",
+            () => reject(pollSignal?.reason),
+            { once: true },
+          );
+        });
+      });
+    const { result } = renderHook(() =>
+      useFileGeneration("payment-code"),
+    );
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(getStatus).toHaveBeenCalledTimes(2);
+    expect(pollSignal?.aborted).toBe(false);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(89_000);
+    });
+
+    expect(pollSignal?.aborted).toBe(true);
+    expect(clearPendingDelivery).not.toHaveBeenCalled();
+    expect(downloadPublicUrl).not.toHaveBeenCalled();
+    expect(result.current.error).toBe(
+      "We couldn't finish delivering your video.",
+    );
+  });
+
+  it("aborts polling on unmount without recovery side effects", async () => {
+    vi.useFakeTimers();
+    let pollSignal: AbortSignal | undefined;
+    readPendingDelivery.mockReturnValue({
+      deliveryId: DELIVERY_ID,
+      tier: "full-hd",
+      filename: "Red-was-ejected.mp4",
+    });
+    getStatus
+      .mockResolvedValueOnce({
+        deliveryId: DELIVERY_ID,
+        status: "email_pending",
+        downloadUrl: PUBLIC_URL,
+        retryable: false,
+      })
+      .mockImplementationOnce((_deliveryId, options) => {
+        pollSignal = options?.signal;
+        return new Promise((_resolve, reject) => {
+          pollSignal?.addEventListener(
+            "abort",
+            () => reject(pollSignal?.reason),
+            { once: true },
+          );
+        });
+      });
+    const { result, unmount } = renderHook(() =>
+      useFileGeneration("payment-code"),
+    );
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(getStatus).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      unmount();
+      await Promise.resolve();
+    });
+
+    expect(pollSignal?.aborted).toBe(true);
+    expect(clearPendingDelivery).not.toHaveBeenCalled();
+    expect(downloadPublicUrl).not.toHaveBeenCalled();
+    expect(downloadBlob).not.toHaveBeenCalled();
+    expect(HTMLMediaElement.prototype.play).not.toHaveBeenCalled();
+    expect(tracking.trackEvent).not.toHaveBeenCalled();
+    expect(result.current.error).toBeNull();
   });
 
   it("clears a recovery record when no current payment code exists", async () => {
