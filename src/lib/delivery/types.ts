@@ -28,10 +28,30 @@ export type AcceptedDelivery = DeliveryResponse & {
   status: "email_accepted";
 };
 
+export interface DeliveryRequestOptions {
+  signal?: AbortSignal;
+}
+
 export interface DeliveryClient {
-  initialize(input: InitializeDeliveryInput): Promise<DeliveryResponse>;
-  upload(target: DeliveryResponse, blob: Blob): Promise<void>;
-  complete(deliveryId: string): Promise<DeliveryResponse>;
-  getStatus(deliveryId: string): Promise<DeliveryResponse>;
-  retry(deliveryId: string): Promise<DeliveryResponse>;
+  initialize(
+    input: InitializeDeliveryInput,
+    options?: DeliveryRequestOptions,
+  ): Promise<DeliveryResponse>;
+  upload(
+    target: DeliveryResponse,
+    blob: Blob,
+    options?: DeliveryRequestOptions,
+  ): Promise<void>;
+  complete(
+    deliveryId: string,
+    options?: DeliveryRequestOptions,
+  ): Promise<DeliveryResponse>;
+  getStatus(
+    deliveryId: string,
+    options?: DeliveryRequestOptions,
+  ): Promise<DeliveryResponse>;
+  retry(
+    deliveryId: string,
+    options?: DeliveryRequestOptions,
+  ): Promise<DeliveryResponse>;
 }

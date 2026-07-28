@@ -1,4 +1,5 @@
 import { sha256Base64 } from "./checksum";
+import { isAmbiguousUploadError } from "./retry";
 import type {
   AcceptedDelivery,
   DeliveryClient,
@@ -10,6 +11,12 @@ const DEFAULT_POLL_INTERVAL_MS = 1000;
 const DEFAULT_POLL_TIMEOUT_MS = 90_000;
 
 type PollSleep = (milliseconds: number) => Promise<void>;
+type TimerHandle = ReturnType<typeof setTimeout>;
+type ScheduleTimeout = (
+  callback: () => void,
+  milliseconds: number,
+) => TimerHandle;
+type CancelTimeout = (handle: TimerHandle) => void;
 
 export interface FinishVideoDeliveryInput {
   client: DeliveryClient;
@@ -20,12 +27,21 @@ export interface FinishVideoDeliveryInput {
   pollTimeoutMs?: number;
   pollSleep?: PollSleep;
   now?: () => number;
+  scheduleTimeout?: ScheduleTimeout;
+  cancelTimeout?: CancelTimeout;
 }
 
 const defaultPollSleep: PollSleep = (milliseconds) =>
   new Promise((resolve) => {
     setTimeout(resolve, milliseconds);
   });
+
+const defaultScheduleTimeout: ScheduleTimeout = (callback, milliseconds) =>
+  setTimeout(callback, milliseconds);
+
+const defaultCancelTimeout: CancelTimeout = (handle) => {
+  clearTimeout(handle);
+};
 
 export class DeliveryError extends Error {
   readonly status: DeliveryResponse["status"];
@@ -49,7 +65,72 @@ export class DeliveryError extends Error {
   }
 }
 
-export async function finishVideoDelivery({
+const deadlineError = (): DeliveryError =>
+  new DeliveryError(
+    "Video delivery is still being finished. Please retry.",
+    { status: "failed", retryable: true },
+  );
+
+const abortReason = (signal: AbortSignal): unknown =>
+  signal.reason ?? deadlineError();
+
+const waitForPoll = (
+  sleep: Promise<void>,
+  signal: AbortSignal,
+): Promise<void> => {
+  if (signal.aborted) {
+    return Promise.reject(abortReason(signal));
+  }
+
+  return new Promise<void>((resolve, reject) => {
+    const onAbort = () => reject(abortReason(signal));
+    signal.addEventListener("abort", onAbort, { once: true });
+    sleep.then(resolve, reject).finally(() => {
+      signal.removeEventListener("abort", onAbort);
+    });
+  });
+};
+
+const runWithDeadline = <T>(
+  operation: (signal: AbortSignal) => Promise<T>,
+  timeoutMs: number,
+  scheduleTimeout: ScheduleTimeout,
+  cancelTimeout: CancelTimeout,
+): Promise<T> => {
+  const controller = new AbortController();
+
+  return new Promise<T>((resolve, reject) => {
+    let settled = false;
+    const timer = scheduleTimeout(() => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      const error = deadlineError();
+      controller.abort(error);
+      reject(error);
+    }, timeoutMs);
+
+    operation(controller.signal).then(
+      (value) => {
+        if (!settled) {
+          settled = true;
+          cancelTimeout(timer);
+          resolve(value);
+        }
+      },
+      (error: unknown) => {
+        if (!settled) {
+          settled = true;
+          cancelTimeout(timer);
+          reject(error);
+        }
+      },
+    );
+  });
+};
+
+const finishBeforeDeadline = async ({
   client,
   blob,
   deliveryId,
@@ -58,45 +139,63 @@ export async function finishVideoDelivery({
   pollTimeoutMs = DEFAULT_POLL_TIMEOUT_MS,
   pollSleep = defaultPollSleep,
   now = Date.now,
-}: FinishVideoDeliveryInput): Promise<AcceptedDelivery> {
+}: FinishVideoDeliveryInput, signal: AbortSignal): Promise<AcceptedDelivery> => {
+  const deadline = now() + pollTimeoutMs;
   const checksum = await sha256Base64(blob);
   let current = await client.initialize({
     deliveryId,
     tier,
     contentLength: blob.size,
     checksum,
-  });
+  }, { signal });
 
   if (current.status === "failed") {
-    current = await client.retry(deliveryId);
+    current = await client.retry(deliveryId, { signal });
   }
 
-  if (current.status === "created") {
-    if (!current.uploadUrl || !current.uploadHeaders) {
-      throw DeliveryError.from({
-        ...current,
-        error: {
-          message: "Video delivery is missing its signed upload target.",
-        },
-      });
+  const hasUploadTarget = Boolean(current.uploadUrl && current.uploadHeaders);
+  let shouldComplete =
+    current.status === "created" || current.status === "uploaded";
+  if (
+    hasUploadTarget &&
+    (current.status === "created" || current.status === "failed")
+  ) {
+    try {
+      await client.upload(current, blob, { signal });
+      shouldComplete = true;
+    } catch (error) {
+      if (!isAmbiguousUploadError(error)) {
+        throw error;
+      }
+      try {
+        current = await client.complete(deliveryId, { signal });
+      } catch (completionError) {
+        if (!isAmbiguousUploadError(completionError)) {
+          throw completionError;
+        }
+        current = await client.getStatus(deliveryId, { signal });
+      }
+      shouldComplete = false;
     }
-    await client.upload(current, blob);
+  } else if (current.status === "created") {
+    throw DeliveryError.from({
+      ...current,
+      error: {
+        message: "Video delivery is missing its signed upload target.",
+      },
+    });
   }
 
-  if (current.status === "created" || current.status === "uploaded") {
-    current = await client.complete(deliveryId);
+  if (shouldComplete) {
+    current = await client.complete(deliveryId, { signal });
   }
 
-  const pollDeadline = now() + pollTimeoutMs;
   while (current.status === "email_pending" || current.status === "uploaded") {
-    if (now() + pollIntervalMs > pollDeadline) {
-      throw new DeliveryError(
-        "Video delivery is still being finished. Please retry.",
-        { status: current.status, retryable: true },
-      );
+    if (now() >= deadline) {
+      throw deadlineError();
     }
-    await pollSleep(pollIntervalMs);
-    current = await client.getStatus(deliveryId);
+    await waitForPoll(pollSleep(pollIntervalMs), signal);
+    current = await client.getStatus(deliveryId, { signal });
   }
 
   if (current.status !== "email_accepted") {
@@ -104,4 +203,21 @@ export async function finishVideoDelivery({
   }
 
   return current as AcceptedDelivery;
+};
+
+export function finishVideoDelivery(
+  input: FinishVideoDeliveryInput,
+): Promise<AcceptedDelivery> {
+  const {
+    pollTimeoutMs = DEFAULT_POLL_TIMEOUT_MS,
+    scheduleTimeout = defaultScheduleTimeout,
+    cancelTimeout = defaultCancelTimeout,
+  } = input;
+
+  return runWithDeadline(
+    (signal) => finishBeforeDeadline(input, signal),
+    pollTimeoutMs,
+    scheduleTimeout,
+    cancelTimeout,
+  );
 }

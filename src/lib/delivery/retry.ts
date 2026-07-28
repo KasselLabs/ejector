@@ -4,6 +4,7 @@ type Sleep = (milliseconds: number) => Promise<void>;
 
 export interface RetryOptions {
   sleep?: Sleep;
+  signal?: AbortSignal;
 }
 
 export class HttpDeliveryError extends Error {
@@ -22,11 +23,11 @@ const defaultSleep: Sleep = (milliseconds) =>
     setTimeout(resolve, milliseconds);
   });
 
-const isTimeoutError = (error: unknown): boolean =>
+export const isTimeoutError = (error: unknown): boolean =>
   error instanceof Error &&
   (error.name === "AbortError" || error.name === "TimeoutError");
 
-const isRetryable = (error: unknown): boolean => {
+export const isRetryableDeliveryError = (error: unknown): boolean => {
   if (error instanceof TypeError || isTimeoutError(error)) {
     return true;
   }
@@ -40,6 +41,38 @@ const isRetryable = (error: unknown): boolean => {
   );
 };
 
+export const isAmbiguousUploadError = (error: unknown): boolean =>
+  error instanceof TypeError ||
+  isTimeoutError(error) ||
+  (error instanceof HttpDeliveryError &&
+    (error.status === 412 || isRetryableDeliveryError(error)));
+
+const abortReason = (signal: AbortSignal): unknown =>
+  signal.reason ??
+  new DOMException("Video delivery request was aborted.", "AbortError");
+
+const waitForRetry = async (
+  sleep: Sleep,
+  milliseconds: number,
+  signal?: AbortSignal,
+): Promise<void> => {
+  if (!signal) {
+    await sleep(milliseconds);
+    return;
+  }
+  if (signal.aborted) {
+    throw abortReason(signal);
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const onAbort = () => reject(abortReason(signal));
+    signal.addEventListener("abort", onAbort, { once: true });
+    sleep(milliseconds).then(resolve, reject).finally(() => {
+      signal.removeEventListener("abort", onAbort);
+    });
+  });
+};
+
 export async function withRetry<T>(
   operation: () => Promise<T>,
   options: RetryOptions = {},
@@ -47,14 +80,21 @@ export async function withRetry<T>(
   const sleep = options.sleep ?? defaultSleep;
 
   for (let attempt = 0; ; attempt += 1) {
+    if (options.signal?.aborted) {
+      throw abortReason(options.signal);
+    }
     try {
       return await operation();
     } catch (error) {
       const delay = RETRY_DELAYS_MS[attempt];
-      if (!isRetryable(error) || delay === undefined) {
+      if (
+        options.signal?.aborted ||
+        !isRetryableDeliveryError(error) ||
+        delay === undefined
+      ) {
         throw error;
       }
-      await sleep(delay);
+      await waitForRetry(sleep, delay, options.signal);
     }
   }
 }

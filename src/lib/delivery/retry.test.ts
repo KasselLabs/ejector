@@ -80,4 +80,31 @@ describe("withRetry", () => {
     expect(operation).toHaveBeenCalledTimes(4);
     expect(sleep.mock.calls.map(([ms]) => ms)).toEqual([1000, 2000, 4000]);
   });
+
+  it("aborts during retry backoff without starting another request", async () => {
+    const controller = new AbortController();
+    let startSleep: (() => void) | undefined;
+    const sleepStarted = new Promise<void>((resolve) => {
+      startSleep = resolve;
+    });
+    const sleep = vi.fn(() => {
+      startSleep?.();
+      return new Promise<void>(() => undefined);
+    });
+    const operation = vi
+      .fn<() => Promise<string>>()
+      .mockRejectedValue(new TypeError("offline"));
+    const deadline = new Error("deadline");
+    const retried = withRetry(operation, {
+      sleep,
+      signal: controller.signal,
+    });
+    const rejection = expect(retried).rejects.toBe(deadline);
+
+    await sleepStarted;
+    controller.abort(deadline);
+
+    await rejection;
+    expect(operation).toHaveBeenCalledTimes(1);
+  });
 });

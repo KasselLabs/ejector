@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   DeliveryError,
   finishVideoDelivery,
@@ -36,6 +36,10 @@ const clientWith = (
   ...overrides,
 });
 
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 describe("finishVideoDelivery", () => {
   it("initializes, uploads, and completes one exact rendered Blob", async () => {
     const initialized = response("created", {
@@ -59,14 +63,24 @@ describe("finishVideoDelivery", () => {
       }),
     ).resolves.toEqual(accepted);
 
-    expect(client.initialize).toHaveBeenCalledWith({
-      deliveryId: DELIVERY_ID,
-      tier: "full-hd",
-      contentLength: 3,
-      checksum: CHECKSUM,
-    });
-    expect(client.upload).toHaveBeenCalledWith(initialized, blob);
-    expect(client.complete).toHaveBeenCalledWith(DELIVERY_ID);
+    expect(client.initialize).toHaveBeenCalledWith(
+      {
+        deliveryId: DELIVERY_ID,
+        tier: "full-hd",
+        contentLength: 3,
+        checksum: CHECKSUM,
+      },
+      { signal: expect.any(AbortSignal) },
+    );
+    expect(client.upload).toHaveBeenCalledWith(
+      initialized,
+      blob,
+      { signal: expect.any(AbortSignal) },
+    );
+    expect(client.complete).toHaveBeenCalledWith(
+      DELIVERY_ID,
+      { signal: expect.any(AbortSignal) },
+    );
     expect(client.getStatus).not.toHaveBeenCalled();
     expect(client.retry).not.toHaveBeenCalled();
   });
@@ -90,11 +104,12 @@ describe("finishVideoDelivery", () => {
     expect(client.retry).not.toHaveBeenCalled();
   });
 
-  it("resumes a failed upload with the same UUID and Blob", async () => {
+  it("resumes the backend's failed upload state with the same UUID and Blob", async () => {
     const failed = response("failed", {
       error: { message: "The video upload could not be verified yet." },
     });
-    const retryTarget = response("created", {
+    const retryTarget = response("failed", {
+      error: { message: "The video upload could not be verified yet." },
       uploadUrl: "https://storage.test/retry-upload",
       uploadHeaders: { "x-amz-checksum-sha256": CHECKSUM },
     });
@@ -113,11 +128,22 @@ describe("finishVideoDelivery", () => {
       }),
     ).resolves.toEqual(accepted);
 
-    expect(client.retry).toHaveBeenCalledWith(DELIVERY_ID);
-    expect(client.upload).toHaveBeenCalledWith(retryTarget, blob);
-    expect(client.complete).toHaveBeenCalledWith(DELIVERY_ID);
+    expect(client.retry).toHaveBeenCalledWith(
+      DELIVERY_ID,
+      { signal: expect.any(AbortSignal) },
+    );
+    expect(client.upload).toHaveBeenCalledWith(
+      retryTarget,
+      blob,
+      { signal: expect.any(AbortSignal) },
+    );
+    expect(client.complete).toHaveBeenCalledWith(
+      DELIVERY_ID,
+      { signal: expect.any(AbortSignal) },
+    );
     expect(client.initialize).toHaveBeenCalledWith(
       expect.objectContaining({ deliveryId: DELIVERY_ID }),
+      { signal: expect.any(AbortSignal) },
     );
   });
 
@@ -137,7 +163,10 @@ describe("finishVideoDelivery", () => {
     ).resolves.toEqual(accepted);
 
     expect(client.upload).not.toHaveBeenCalled();
-    expect(client.complete).toHaveBeenCalledWith(DELIVERY_ID);
+    expect(client.complete).toHaveBeenCalledWith(
+      DELIVERY_ID,
+      { signal: expect.any(AbortSignal) },
+    );
   });
 
   it("polls pending and uploaded states at a separate 1-second interval", async () => {
@@ -164,36 +193,50 @@ describe("finishVideoDelivery", () => {
       1000, 1000, 1000,
     ]);
     expect(client.getStatus).toHaveBeenCalledTimes(3);
-    expect(client.getStatus).toHaveBeenCalledWith(DELIVERY_ID);
+    expect(client.getStatus).toHaveBeenCalledWith(
+      DELIVERY_ID,
+      { signal: expect.any(AbortSignal) },
+    );
   });
 
-  it("stops polling at the configured deadline", async () => {
-    let now = 0;
-    const client = clientWith(response("email_pending"), {
-      getStatus: vi.fn().mockResolvedValue(response("email_pending")),
+  it("rejects an acceptance that arrives after the hard orchestration deadline", async () => {
+    vi.useFakeTimers();
+    let statusSignal: AbortSignal | undefined;
+    let resolveStatusStarted: (() => void) | undefined;
+    const statusStarted = new Promise<void>((resolve) => {
+      resolveStatusStarted = resolve;
     });
-    const pollSleep = vi.fn(async (milliseconds: number) => {
-      now += milliseconds;
+    const client = clientWith(response("email_pending"), {
+      getStatus: vi.fn((_deliveryId, options) => {
+        statusSignal = options?.signal;
+        resolveStatusStarted?.();
+        return new Promise<DeliveryResponse>((resolve) => {
+          setTimeout(() => resolve(response("email_accepted")), 3000);
+        });
+      }),
     });
 
-    await expect(
-      finishVideoDelivery({
-        client,
-        blob,
-        deliveryId: DELIVERY_ID,
-        tier: "full-hd",
-        pollSleep,
-        now: () => now,
-        pollTimeoutMs: 2500,
-      }),
-    ).rejects.toEqual(
+    const finishing = finishVideoDelivery({
+      client,
+      blob,
+      deliveryId: DELIVERY_ID,
+      tier: "full-hd",
+      pollTimeoutMs: 2500,
+      pollSleep: vi.fn().mockResolvedValue(undefined),
+    });
+    const rejection = expect(finishing).rejects.toEqual(
       expect.objectContaining<Partial<DeliveryError>>({
         name: "DeliveryError",
         retryable: true,
       }),
     );
-    expect(pollSleep).toHaveBeenCalledTimes(2);
-    expect(client.getStatus).toHaveBeenCalledTimes(2);
+    await statusStarted;
+    expect(statusSignal?.aborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(2500);
+
+    await rejection;
+    expect(statusSignal?.aborted).toBe(true);
+    await vi.advanceTimersByTimeAsync(3000);
   });
 
   it("throws a typed delivery error instead of returning a failed state", async () => {
