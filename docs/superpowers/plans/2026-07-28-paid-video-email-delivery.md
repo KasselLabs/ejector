@@ -175,20 +175,15 @@ async function deliverTracked({
   content, send, publishReceipt, sleep, now,
 }) {
   let attempts = 0;
+  let result;
   for (;;) {
     attempts += 1;
     try {
-      const result = await send(content.payload);
+      result = await send(content.payload);
       if (!Array.isArray(result) || result.length === 0) {
         throw new Error('No valid recipient');
       }
-      await publishReceipt(content.deliveryReceipt.queue, {
-        deliveryId: content.deliveryReceipt.deliveryId,
-        status: 'accepted',
-        attempts,
-        occurredAt: now().toISOString(),
-      });
-      return;
+      break;
     } catch (error) {
       const delay = RETRY_DELAYS_MS[attempts - 1];
       if (delay !== undefined) {
@@ -205,6 +200,15 @@ async function deliverTracked({
       return;
     }
   }
+  // Receipt publication is deliberately outside the provider retry loop.
+  // If Mailgun accepted but RabbitMQ receipt publication fails, propagate the
+  // error to queue handling; never submit the email again in this attempt.
+  await publishReceipt(content.deliveryReceipt.queue, {
+    deliveryId: content.deliveryReceipt.deliveryId,
+    status: 'accepted',
+    attempts,
+    occurredAt: now().toISOString(),
+  });
 }
 
 module.exports = { RETRY_DELAYS_MS, deliverTracked };
@@ -233,9 +237,10 @@ async function publishReceipt(channel, configuredQueue, requestedQueue, receipt)
 
 Create a confirm channel, call `deliverTracked` for messages with
 `deliveryReceipt`, and `ack(message)` only after the receipt confirm resolves.
-On receipt-publication failure call `nack(message, false, true)`. Preserve the
-existing untracked `email` and `template` path. Log only the delivery ID for
-tracked messages.
+Receipt publication is outside the Mailgun retry loop: on its failure call
+`nack(message, false, true)` without another provider submission in the same
+processing attempt. Preserve the existing untracked `email` and `template`
+path. Log only the delivery ID for tracked messages.
 
 Set `config.amqp.deliveryReceiptQueue` to
 `EjectorDeliveryReceipts_dev` in default/test and
