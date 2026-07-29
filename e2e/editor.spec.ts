@@ -23,3 +23,19 @@ test("character color swatches are present", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByLabel("#d1211d")).toBeVisible();
 });
+
+test("newsletter panel does not overlap the editor at small desktop widths", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await page.goto("/");
+
+  const newsletter = await page.locator("form").first().boundingBox();
+  const ejectionText = await page.getByLabel("Ejection Text").boundingBox();
+
+  expect(newsletter).not.toBeNull();
+  expect(ejectionText).not.toBeNull();
+  expect(newsletter!.y + newsletter!.height).toBeLessThanOrEqual(
+    ejectionText!.y,
+  );
+});

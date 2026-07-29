@@ -93,13 +93,13 @@ export function SubscribeForm() {
     <>
       <form
         onSubmit={handleSubmit}
-        className="z-30 max-w-[280px] rounded-[10px] border-[3px] border-solid border-white lg:fixed lg:left-4 lg:top-[66px] max-lg:mb-2 max-lg:w-full max-lg:max-w-none"
+        className="z-30 max-w-[280px] rounded-[10px] border-[3px] border-solid border-white min-[1300px]:fixed min-[1300px]:left-4 min-[1300px]:top-[66px] max-[1299px]:mb-2 max-[1299px]:w-full max-[1299px]:max-w-[680px]"
       >
         <div className="relative p-4">
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black px-2 text-[1.1em] font-bold text-white">
             {t("Choose your map")}
           </div>
-          <div className="pb-2 max-lg:flex max-lg:flex-row max-lg:flex-wrap max-lg:justify-evenly">
+          <div className="pb-2 max-[1299px]:flex max-[1299px]:flex-row max-[1299px]:flex-wrap max-[1299px]:justify-evenly">
             <MapImage
               src="/images/skeld.png"
               width={282}
@@ -121,7 +121,7 @@ export function SubscribeForm() {
             )}
           </p>
           <div className="flex flex-col items-center">
-            <div className="w-full max-lg:w-[320px] max-[380px]:w-full">
+            <div className="w-full max-[1299px]:w-[320px] max-[380px]:w-full">
               <OutlinedField
                 label={t("Your Email")}
                 type="email"

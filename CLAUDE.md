@@ -67,6 +67,9 @@ Everything heavy is deferred; keep it that way when touching these files:
   `pointerdown`, so `background.mp3` is never fetched before it can be heard.
 - The Remotion preview autoplays and loops, but sound defaults to off for new
   visitors. Explicit sound choices persist in `ejector-sound-on`.
+- The map/newsletter panel only docks to the left at 1300px and wider. Below
+  that width it stays in normal flow above the 680px editor so the two panels
+  never overlap.
 - `CreatorGrid.tsx` ("use client", fed by the `MoreCreators` Server Component)
   ships the preview `<video>`s with `preload="none"` and the clip URL in
   `data-src`; one IntersectionObserver (`rootMargin: 200px`) attaches the
