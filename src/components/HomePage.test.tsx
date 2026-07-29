@@ -57,6 +57,16 @@ function renderHome() {
 }
 
 describe("HomePage", () => {
+  it("starts with sound off for a first-time visitor", () => {
+    window.localStorage.removeItem("ejector-sound-on");
+    renderHome();
+
+    expect(screen.getByRole("button", { name: "Sound" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
   it("renders both text inputs with their default values", () => {
     renderHome();
     expect(screen.getByLabelText("Ejection Text")).toHaveValue(

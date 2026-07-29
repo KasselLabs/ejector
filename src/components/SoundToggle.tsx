@@ -6,7 +6,7 @@ import { useT } from "@/lib/i18n";
 const STORAGE_KEY = "ejector-sound-on";
 
 // soundOn is app-global external state (localStorage), read through
-// useSyncExternalStore so the server snapshot (true) matches the first client
+// useSyncExternalStore so the server snapshot (false) matches the first client
 // render and the persisted value is only applied after hydration — the same
 // pattern used for the locale store, avoiding a hydration mismatch.
 type Listener = () => void;
@@ -20,13 +20,13 @@ function subscribe(listener: Listener) {
 
 function getSnapshot(): boolean {
   if (cachedValue === null) {
-    cachedValue = window.localStorage.getItem(STORAGE_KEY) !== "false";
+    cachedValue = window.localStorage.getItem(STORAGE_KEY) === "true";
   }
   return cachedValue;
 }
 
 function getServerSnapshot(): boolean {
-  return true;
+  return false;
 }
 
 function commit(value: boolean) {

@@ -65,6 +65,8 @@ Everything heavy is deferred; keep it that way when touching these files:
 - The ambient `<audio>` is `preload="none"` and only attempts `play()` when
   `navigator.userActivation.hasBeenActive` — otherwise it waits for the first
   `pointerdown`, so `background.mp3` is never fetched before it can be heard.
+- The Remotion preview autoplays and loops, but sound defaults to off for new
+  visitors. Explicit sound choices persist in `ejector-sound-on`.
 - `CreatorGrid.tsx` ("use client", fed by the `MoreCreators` Server Component)
   ships the preview `<video>`s with `preload="none"` and the clip URL in
   `data-src`; one IntersectionObserver (`rootMargin: 200px`) attaches the

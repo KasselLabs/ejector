@@ -27,6 +27,7 @@ vi.mock("@remotion/player", async () => {
           data-fps={String(props.fps)}
           data-width={String(props.compositionWidth)}
           data-height={String(props.compositionHeight)}
+          data-autoplay={String(props.autoPlay)}
           data-muted={String(props.initiallyMuted)}
           data-props={JSON.stringify(props.inputProps)}
         />
@@ -63,6 +64,7 @@ describe("PlayerPreview", () => {
     expect(player).toHaveAttribute("data-fps", "30");
     expect(player).toHaveAttribute("data-width", "1920");
     expect(player).toHaveAttribute("data-height", "1080");
+    expect(player).toHaveAttribute("data-autoplay", "true");
   });
 
   it("passes the input props through to the Player", async () => {
