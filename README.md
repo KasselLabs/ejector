@@ -10,6 +10,9 @@
 
 ## Setup
 
+Use Node.js 22.23.4 or a newer patch within major 22 (`nvm use`) and npm.
+Rebuild artifacts after updating the runtime.
+
 ```sh
 npm install
 cp .env.example .env.local
