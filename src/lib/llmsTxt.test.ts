@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 // public/llms.txt describes the product to AI crawlers. It repeats facts that
-// live in code (prices, resolutions, the no-server-render guarantee), so these
+// live in code (prices, resolutions, browser support), so these
 // assertions exist to catch it going stale when those change.
 const llmsTxt = readFileSync(join(process.cwd(), "public/llms.txt"), "utf8");
 
@@ -21,7 +21,8 @@ describe("llms.txt", () => {
   });
 
   it("states that rendering happens in the browser", () => {
-    expect(llmsTxt).toMatch(/no server-side renderer/i);
+    expect(llmsTxt).toMatch(/rendering starts in your browser/i);
+    expect(llmsTxt).toMatch(/opt-in server render/i);
   });
 
   it("links only to policy URLs that resolve", () => {

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useT, useLocale } from "@/lib/i18n";
 import { staticCharacterFrames } from "@/lib/characterImages";
+import { CHARACTER_COLORS } from "@/lib/characterColor";
 import { DEFAULT_CHARACTER_URL } from "@/remotion/EjectorComposition";
 import { trackEvent } from "@/lib/tracking";
 import type { CharacterFrames, EjectorProps } from "@/types";
@@ -26,9 +27,13 @@ export function HomePage() {
   const [impostorText, setImpostorText] = useState(() =>
     t("1 Impostor remains"),
   );
-  const [characterFrames, setCharacterFrames] = useState<CharacterFrames>(() =>
-    staticCharacterFrames(DEFAULT_CHARACTER_URL),
-  );
+  const [{ frames: characterFrames, stockColor }, setCharacter] = useState<{
+    frames: CharacterFrames;
+    stockColor: string | null;
+  }>(() => ({
+    frames: staticCharacterFrames(DEFAULT_CHARACTER_URL),
+    stockColor: CHARACTER_COLORS[0].value,
+  }));
   const [soundOn, setSoundOn] = useSoundOn();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -88,10 +93,12 @@ export function HomePage() {
               markEdited("impostor");
               setImpostorText(value);
             }}
-            onCharacterFramesChange={setCharacterFrames}
+            onCharacterFramesChange={(frames, color) =>
+              setCharacter({ frames, stockColor: color })
+            }
             onError={setErrorMessage}
           />
-          <DownloadSection props={props} />
+          <DownloadSection props={props} stockColor={stockColor} />
         </div>
         <PlayerPreview props={props} soundOn={soundOn} />
         <Footer />

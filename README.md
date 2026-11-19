@@ -30,7 +30,7 @@ template) and is read once in `src/lib/config.ts`.
 | Variable | Purpose | Default when unset |
 | --- | --- | --- |
 | `NEXT_PUBLIC_PAYMENT_PAGE_URL` | Origin of the payment-frontend app embedded as an iframe for checkout, and the only origin `postMessage` payment-success events are trusted from. | `https://payment.kassellabs.io` |
-| `NEXT_PUBLIC_PAYMENT_API_URL` | Base URL of payment-backend, used for paid-status checks and the paid-video delivery routes. **Must be set in production** (the payment-backend origin) — when unset it resolves same-origin, so paid status and delivery requests cannot reach the production API. No separate public storage or mail setting is required. Production value: `https://api.payment.kassellabs.io`. | `""` (same-origin) |
+| `NEXT_PUBLIC_PAYMENT_API_URL` | Base URL of payment-backend for paid status, MP4 delivery, and server render jobs. Set it to `https://api.payment.kassellabs.io` in production. | `""` (same-origin) |
 | `NEXT_PUBLIC_ADMIN_GRAPHQL_URL` | GraphQL endpoint on `admin.kassellabs.io` used for newsletter subscribe/unsubscribe. | `https://admin.kassellabs.io/graphql` |
 | `NEXT_PUBLIC_GA_ID` | Google Analytics measurement ID. Tracking is a no-op when unset. | `""` (disabled) |
 
@@ -49,18 +49,27 @@ template) and is read once in `src/lib/config.ts`.
 
 ## Architecture
 
-- **100% in-browser rendering pipeline.** There is no server-side renderer. The
-  eject animation is a [Remotion](https://www.remotion.dev/) composition
+- **Browser-first rendering.** The eject animation is a
+  [Remotion](https://www.remotion.dev/) composition
   (`src/remotion/EjectorComposition.tsx`) previewed live with `@remotion/player`
   and exported client-side: MP4 via `@remotion/web-renderer` (WebCodecs), GIF
   via `gifenc`. After a paid MP4 is rendered, that exact output Blob is uploaded
   directly to persistent object storage so payment-backend can email the
-  payment recipient an unguessable public download link. Source images are not
-  sent for server rendering, and free GIF output is never uploaded. The
+  payment recipient an unguessable public download link. Custom character
+  source files and free GIF output stay in the browser. The
   animation timing constants
   (`src/lib/animationConstants.ts`) and composition logic are a direct port of
   the original canvas implementation — see the `legacy-canvas` git tag for the
   ground-truth reference (`git show legacy-canvas:src/util/drawAnimation.js`).
+- **Paid server fallback.** If the browser cannot render a paid MP4 with a
+  stock character, the user can choose **Render on our server**. The action
+  sends the two text fields and selected stock color with the paid tier and
+  job UUID. Payment-backend verifies eligibility and queues the server render.
+  The browser saves the acknowledged job UUID for the payment code and
+  checks the job after reload. The download appears as soon as the MP4 is
+  ready, and email status keeps updating while delivery is pending.
+  To exercise this path without a local render failure,
+  open `/?testServerRender=1` with a paid session and select a stock color.
 - **Payment is a soft gate**, backed by two sibling repos that must be
   deployed together with this app:
   - **payment-frontend** (branch `feat/ejector-app`) is embedded as an iframe
@@ -69,12 +78,13 @@ template) and is read once in `src/lib/config.ts`.
     `GET /payment/ejector/:code/paid`, keyed by a client-generated UUID
     persisted in `localStorage` (`ejector-payment-code`), which restores a
     24-hour unlimited-download window on return visits. It also owns
+    the server render job endpoints and
     `POST /payment/ejector/:code/deliveries`, delivery completion/retry, and
     delivery status routes. Those routes authorize against the payment row,
     derive its email server-side, issue the direct-upload target, and wait for
     mail-provider acceptance.
   - GIF export is always free (watermarked). MP4 is paid: $3 for a
-    watermarked 720p file, $5 for a clean 1080p file. The local download starts
+    watermarked 720p file, $5 for a clean 1080p file. A browser-rendered MP4 downloads
     only after the provider accepts the one email for that generated video.
     The browser stores only one recovery record containing the delivery UUID,
     tier, and filename. After refresh, it can resume a server-confirmed upload
@@ -95,9 +105,8 @@ template) and is read once in `src/lib/config.ts`.
 
 ## Browser support
 
-Live preview (the Remotion `<Player>`) works in any modern browser. **MP4 and
+Live preview (the Remotion `<Player>`) works in modern browsers. **Local MP4 and
 GIF export require [WebCodecs](https://developer.mozilla.org/en-US/docs/Web/API/WebCodecs_API
-)**, so exporting is limited to Chromium-based browsers (Chrome, Edge) and
-recent Safari. `src/lib/render/capability.ts` detects support up front and
-the UI surfaces an explicit "unsupported browser" state rather than failing
-silently mid-render.
+)**, available in Chromium-based browsers (Chrome, Edge) and recent Safari.
+`src/lib/render/capability.ts` checks support before exporting. Paid MP4s
+with a stock character can use the opt-in server fallback.
