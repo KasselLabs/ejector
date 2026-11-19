@@ -11,6 +11,7 @@ import {
 } from "@/lib/characterColor";
 import type { CharacterFrames } from "@/types";
 import { cn } from "@/lib/utils";
+import { DEFAULT_CHARACTER_URL } from "@/remotion/EjectorComposition";
 
 export function CharacterGenerator({
   onChange,
@@ -27,9 +28,11 @@ export function CharacterGenerator({
 
   async function handleSelect(color: CharacterColor) {
     setSelectedColor(color);
-    const dataUrl = await generateColoredCharacter(color);
-    setPreviewUrl(dataUrl);
-    onChange(staticCharacterFrames(dataUrl), color.value);
+    const imageUrl = color.value === CHARACTER_COLORS[0].value
+      ? DEFAULT_CHARACTER_URL
+      : await generateColoredCharacter(color);
+    setPreviewUrl(imageUrl);
+    onChange(staticCharacterFrames(imageUrl), color.value);
   }
 
   return (

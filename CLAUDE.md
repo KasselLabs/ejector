@@ -17,13 +17,14 @@
   `POST /payment/ejector/:code/render-jobs`. Payment-backend validates the
   purchase and queues the private renderer. Delivery failures in the browser
   flow use **Retry delivery**.
-- **Server job recovery.** The browser persists only the job UUID under
-  `ejector-render-job:<payment code>`. A lost POST response retries the same
-  in-memory submission and UUID. Reloading checks the existing UUID by GET
-  without repeating the POST. Polling runs every two seconds for up to three
-  minutes, with a manual retry if the connection fails. A ready job exposes an
-  explicit download link and reports email status separately. Retrying a
-  confirmed failed render starts a fresh UUID. The `?testServerRender=1`
+- **Server job recovery.** After enqueue acknowledgement, the browser persists
+  only the job UUID under `ejector-render-job:<payment code>`. While waiting for
+  that response, retries in the same tab reuse the in-memory submission and
+  UUID. Reloading checks a saved UUID by GET. Polling runs every two seconds
+  for up to three minutes, including after the MP4 is ready if email is still
+  pending. The verified download stays available if the email status check
+  fails or times out. Retrying a confirmed failed render starts a fresh UUID.
+  The `?testServerRender=1`
   query exposes the same consent action directly for paid, eligible stock
   selections.
 - **Payment is a soft gate.** A client UUID (`ejector-payment-code` in

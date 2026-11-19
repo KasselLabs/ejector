@@ -223,6 +223,148 @@ describe("paid server rendering", () => {
     expect(anchorClick).not.toHaveBeenCalled();
   });
 
+  it("updates the ready video's email notice after acceptance", async () => {
+    window.localStorage.setItem(renderJobKey, renderJobId);
+    let checks = 0;
+    server.use(
+      http.get("*/payment/ejector/:code/render-jobs/:id", ({ params }) =>
+        HttpResponse.json({
+          id: params.id,
+          status: "ready",
+          downloadUrl: serverVideo,
+          emailStatus: ++checks === 1 ? "pending" : "sent",
+        }),
+      ),
+    );
+    renderPaid("#d1211d");
+
+    const download = await screen.findByRole("link", { name: "Download" });
+    expect(screen.getByText(/preparing the email/i)).toBeVisible();
+    expect(await screen.findByText(/sent.*payment email/i, {}, { timeout: 3500 }))
+      .toBeVisible();
+    expect(download).toHaveAttribute("href", serverVideo);
+  });
+
+  it("keeps a verified download if the server can no longer verify email", async () => {
+    window.localStorage.setItem(renderJobKey, renderJobId);
+    let checks = 0;
+    server.use(
+      http.get("*/payment/ejector/:code/render-jobs/:id", ({ params }) => {
+        if (++checks > 1) return new HttpResponse(null, { status: 403 });
+        return HttpResponse.json({
+          id: params.id,
+          status: "ready",
+          downloadUrl: serverVideo,
+          emailStatus: "pending",
+        });
+      }),
+    );
+    renderPaid("#d1211d");
+
+    expect(await screen.findByText(/couldn't confirm.*email/i, {}, { timeout: 3500 }))
+      .toBeVisible();
+    expect(screen.getByRole("link", { name: "Download" }))
+      .toHaveAttribute("href", serverVideo);
+    expect(screen.queryByText(/preparing the email/i)).toBeNull();
+    expect(window.localStorage.getItem(renderJobKey)).toBe(renderJobId);
+  });
+
+  it("keeps the verified link and ends the pending email notice after the polling deadline", async () => {
+    vi.useFakeTimers();
+    try {
+      window.localStorage.setItem(renderJobKey, renderJobId);
+      let checks = 0;
+      server.use(
+        http.get("*/payment/ejector/:code/render-jobs/:id", ({ params }) => {
+          if (++checks > 1) return HttpResponse.error();
+          return HttpResponse.json({
+            id: params.id,
+            status: "ready",
+            downloadUrl: serverVideo,
+            emailStatus: "pending",
+          });
+        }),
+      );
+      renderPaid("#d1211d");
+
+      await vi.waitFor(() => expect(screen.getByText(/preparing the email/i)).toBeVisible());
+      await act(async () => await vi.advanceTimersByTimeAsync(15_000));
+      expect(checks).toBeGreaterThan(5);
+      expect(screen.getByRole("link", { name: "Download" }))
+        .toHaveAttribute("href", serverVideo);
+      await act(async () => await vi.advanceTimersByTimeAsync(180_000));
+
+      expect(screen.getByText(/couldn't confirm.*email/i)).toBeVisible();
+      expect(screen.getByRole("link", { name: "Download" }))
+        .toHaveAttribute("href", serverVideo);
+      expect(screen.queryByText(/preparing the email/i)).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("can start a new server render while an earlier video's email is pending", async () => {
+    window.history.replaceState(null, "", "/?testServerRender=1");
+    window.localStorage.setItem(renderJobKey, renderJobId);
+    const nextVideo = "https://downloads.test/next-video.mp4";
+    server.use(
+      http.get("*/payment/ejector/:code/render-jobs/:id", ({ params }) =>
+        HttpResponse.json({
+          id: params.id,
+          status: "ready",
+          downloadUrl: serverVideo,
+          emailStatus: "pending",
+        }),
+      ),
+      http.post("*/payment/ejector/:code/render-jobs", async ({ request }) => {
+        const { id } = (await request.json()) as { id: string };
+        expect(id).not.toBe(renderJobId);
+        return HttpResponse.json({
+          id,
+          status: "ready",
+          downloadUrl: nextVideo,
+          emailStatus: "sent",
+        });
+      }),
+    );
+    renderPaid("#d1211d");
+
+    expect(await screen.findByText(/preparing the email/i)).toBeVisible();
+    await userEvent.click(screen.getByRole("button", { name: "Render on our server" }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("link", { name: "Download" }))
+        .toHaveAttribute("href", nextVideo),
+    );
+  });
+
+  it("waits for enqueue acknowledgement before writing a shared resume UUID", async () => {
+    window.history.replaceState(null, "", "/?testServerRender=1");
+    let attemptedId: string | undefined;
+    let rejectSubmission!: () => void;
+    server.use(
+      http.post("*/payment/ejector/:code/render-jobs", async ({ request }) => {
+        const { id } = (await request.json()) as { id: string };
+        attemptedId = id;
+        await new Promise<void>((resolve) => {
+          rejectSubmission = resolve;
+        });
+        return new HttpResponse(null, { status: 409 });
+      }),
+    );
+    renderPaid("#d1211d");
+
+    await userEvent.click(await screen.findByRole("button", { name: "Render on our server" }));
+    await waitFor(() => expect(attemptedId).toBeDefined());
+    expect(window.localStorage.getItem(renderJobKey)).toBeNull();
+    // Another tab records the job it successfully enqueued before this POST was rejected.
+    window.localStorage.setItem(renderJobKey, renderJobId);
+    rejectSubmission();
+
+    expect(await screen.findByText("This server render is unavailable.")).toBeVisible();
+    expect(window.localStorage.getItem(renderJobKey)).toBe(renderJobId);
+  });
+
   it("reuses a UUID after a transport failure and uses a fresh UUID only after confirmed job failure", async () => {
     window.history.replaceState(null, "", "/?testServerRender=1");
     const submittedIds: string[] = [];
@@ -272,6 +414,13 @@ describe("paid server rendering", () => {
 
     renderPaid("#d1211d", { ...props, ejectedText: "x".repeat(301) });
     expect(screen.queryByRole("button", { name: "Render on our server" })).toBeNull();
+  });
+
+  it("allows a paid stock render with both captions blank", async () => {
+    window.history.replaceState(null, "", "/?testServerRender=1");
+    renderPaid("#d1211d", { ...props, ejectedText: "", impostorText: "" });
+
+    expect(screen.getByRole("button", { name: "Render on our server" })).toBeVisible();
   });
 });
 

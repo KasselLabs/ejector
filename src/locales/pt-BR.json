@@ -58,6 +58,7 @@
   "We're preparing the email with your download link.": "Estamos preparando o e-mail com o link para baixar seu vídeo.",
   "We sent the download link to your payment email.": "Enviamos o link para o e-mail informado no pagamento.",
   "Email delivery failed. You can download your video here.": "Não conseguimos enviar o e-mail. Você pode baixar seu vídeo aqui.",
+  "We couldn't confirm whether the download email was sent.": "Não conseguimos confirmar o envio do e-mail com o link para baixar o vídeo.",
   "Download": "Baixar",
   "Retry server render connection": "Tentar conectar ao servidor novamente",
   "GIF": "GIF",

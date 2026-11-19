@@ -65,9 +65,10 @@ template) and is read once in `src/lib/config.ts`.
   stock character, the user can choose **Render on our server**. The action
   sends the two text fields and selected stock color with the paid tier and
   job UUID. Payment-backend verifies eligibility and queues the server render.
-  The browser stores the job UUID for the payment code and checks the job
-  after reload. When the MP4 is ready, the user can download it directly and
-  see the email status. To exercise this path without a local render failure,
+  The browser saves the acknowledged job UUID for the payment code and
+  checks the job after reload. The download appears as soon as the MP4 is
+  ready, and email status keeps updating while delivery is pending.
+  To exercise this path without a local render failure,
   open `/?testServerRender=1` with a paid session and select a stock color.
 - **Payment is a soft gate**, backed by two sibling repos that must be
   deployed together with this app:

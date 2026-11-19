@@ -29,6 +29,7 @@ const SERVER_RENDER_EMAIL_MESSAGES = {
   pending: "We're preparing the email with your download link.",
   sent: "We sent the download link to your payment email.",
   failed: "Email delivery failed. You can download your video here.",
+  unknown: "We couldn't confirm whether the download email was sent.",
 };
 
 function subscribeToLocationChange(notify: () => void) {
@@ -82,9 +83,7 @@ export function DownloadSection({
     paid && tier && code && stockColor &&
     CHARACTER_COLORS.some(({ value }) => value === stockColor);
   const validServerText =
-    ejectedText.length <= 300 &&
-    impostorText.length <= 300 &&
-    (ejectedText.trim() !== "" || impostorText.trim() !== "");
+    ejectedText.length <= 300 && impostorText.length <= 300;
   const serverInput =
     paidStockCharacter && validServerText
       ? { tier, color: stockColor, ejectedText, impostorText }

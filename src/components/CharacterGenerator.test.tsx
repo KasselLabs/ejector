@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CharacterGenerator } from "./CharacterGenerator";
 import { CHARACTER_COLORS } from "@/lib/characterColor";
+import { DEFAULT_CHARACTER_URL } from "@/remotion/EjectorComposition";
 
 // Canvas pixel ops in characterColor.ts can't run under jsdom
 // (vitest-canvas-mock returns zeroed pixel data), so the component test
@@ -52,6 +53,20 @@ describe("CharacterGenerator", () => {
     expect(stockColor).toBe("#1e27e2");
     expect(frames.frames).toHaveLength(1);
     expect(frames.frames[0].imageUrl).toBe("data:image/png;base64,mocked");
+  });
+
+  it("uses the canonical default sprite when red is selected explicitly", async () => {
+    const onChange = vi.fn();
+    render(<CharacterGenerator onChange={onChange} />);
+
+    await userEvent.click(screen.getByLabelText("#d1211d"));
+
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        frames: [expect.objectContaining({ imageUrl: DEFAULT_CHARACTER_URL })],
+      }),
+      "#d1211d",
+    );
   });
 
   it("moves the selection ring to the clicked swatch", async () => {

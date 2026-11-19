@@ -58,6 +58,7 @@
   "We're preparing the email with your download link.": "We're preparing the email with your download link.",
   "We sent the download link to your payment email.": "We sent the download link to your payment email.",
   "Email delivery failed. You can download your video here.": "Email delivery failed. You can download your video here.",
+  "We couldn't confirm whether the download email was sent.": "We couldn't confirm whether the download email was sent.",
   "Download": "Download",
   "Retry server render connection": "Retry server render connection",
   "GIF": "GIF",

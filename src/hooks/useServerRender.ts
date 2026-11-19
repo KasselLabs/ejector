@@ -12,8 +12,10 @@ import {
 const POLL_INTERVAL_MS = 2000;
 const TIMEOUT_MS = 180_000;
 
+type ReadyRenderJob = Extract<RenderJob, { status: "ready" }>;
 type ServerRenderState =
   | RenderJob
+  | (Omit<ReadyRenderJob, "emailStatus"> & { emailStatus: "unknown" })
   | { status: "connecting" | "connection-lost" | "unavailable" };
 
 interface Attempt {
@@ -37,6 +39,9 @@ function waitForPoll(signal: AbortSignal): Promise<void> {
   });
 }
 
+const isUnavailable = (error: unknown) =>
+  error instanceof HttpDeliveryError && !error.retryable;
+
 export function useServerRender(paymentCode: string | null) {
   const [current, setCurrent] = useState<{
     code: string;
@@ -59,20 +64,37 @@ export function useServerRender(paymentCode: string | null) {
     }
 
     update({ status: "connecting" });
+    let readyJob: ReadyRenderJob | undefined;
     try {
       let result = await requestRenderJob(code, id, signal, job.input);
-      // From this point forward the server has confirmed the job exists.
-      // Status retries need only the UUID.
+      if (active.current !== controller) return;
+      // Only an acknowledged submission can replace the shared resume ID.
+      if (job.input) saveRenderJobId(code, id);
       job.input = undefined;
       update(result);
-      while (result.status !== "ready" && result.status !== "failed") {
+
+      while (result.status !== "failed") {
+        if (result.status === "ready") {
+          readyJob = result;
+          if (result.emailStatus !== "pending") break;
+        }
         await waitForPoll(signal);
-        result = await requestRenderJob(code, id, signal);
-        update(result);
+        try {
+          const next = await requestRenderJob(code, id, signal);
+          // A stale status read cannot undo an already verified download.
+          if (readyJob && next.status !== "ready") continue;
+          result = next;
+          update(result);
+        } catch (error) {
+          if (!readyJob || signal.aborted || isUnavailable(error)) throw error;
+          // Keep the ready link while retrying an interrupted email check.
+        }
       }
     } catch (error) {
       if (active.current !== controller) return;
-      if (error instanceof HttpDeliveryError && !error.retryable) {
+      if (readyJob) {
+        update({ ...readyJob, emailStatus: "unknown" });
+      } else if (isUnavailable(error)) {
         clearRenderJobId(code, id);
         attempt.current = null;
         update({ status: "unavailable" });
@@ -100,8 +122,12 @@ export function useServerRender(paymentCode: string | null) {
   const state = current?.code === paymentCode ? current.state : null;
 
   function start(input: ServerRenderInput) {
-    if (!paymentCode || active.current || state?.status === "connection-lost") {
-      return;
+    if (!paymentCode || state?.status === "connection-lost") return;
+    if (active.current) {
+      if (state?.status !== "ready" || state.id !== attempt.current?.id) return;
+      // A new explicit request can replace the last job's email status poll.
+      active.current.abort();
+      active.current = null;
     }
     const storedId = readRenderJobId(paymentCode);
     if (storedId && storedId !== attempt.current?.id) {
@@ -110,7 +136,6 @@ export function useServerRender(paymentCode: string | null) {
       return;
     }
     const id = crypto.randomUUID();
-    saveRenderJobId(paymentCode, id);
     void run({ code: paymentCode, id, input });
   }
 
