@@ -26,11 +26,13 @@ export function EditorForm({
   onToggleSound: (value: boolean) => void;
   onEjectedTextChange: (value: string) => void;
   onImpostorTextChange: (value: string) => void;
-  onCharacterFramesChange: (frames: CharacterFrames) => void;
+  onCharacterFramesChange: (frames: CharacterFrames, stockColor: string | null) => void;
   onError?: (message: string) => void;
 }) {
   const t = useT();
   const previewUrl = characterFrames.frames[0]?.imageUrl ?? "";
+  const onCustomCharacterChange = (frames: CharacterFrames) =>
+    onCharacterFramesChange(frames, null);
 
   return (
     <div className="flex flex-col gap-4">
@@ -44,7 +46,7 @@ export function EditorForm({
       <div className="flex w-full items-stretch gap-2">
         <UploadArea
           previewUrl={previewUrl}
-          onChange={onCharacterFramesChange}
+          onChange={onCustomCharacterChange}
           onError={onError}
         />
         <div className="flex flex-1 flex-col justify-center gap-6">
@@ -61,7 +63,7 @@ export function EditorForm({
         </div>
       </div>
 
-      <ImageUrlField onChange={onCharacterFramesChange} onError={onError} />
+      <ImageUrlField onChange={onCustomCharacterChange} onError={onError} />
     </div>
   );
 }

@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 export function CharacterGenerator({
   onChange,
 }: {
-  onChange: (frames: CharacterFrames) => void;
+  onChange: (frames: CharacterFrames, stockColor: string) => void;
 }) {
   const t = useT();
   const [selectedColor, setSelectedColor] = useState<CharacterColor>(
@@ -29,7 +29,7 @@ export function CharacterGenerator({
     setSelectedColor(color);
     const dataUrl = await generateColoredCharacter(color);
     setPreviewUrl(dataUrl);
-    onChange(staticCharacterFrames(dataUrl));
+    onChange(staticCharacterFrames(dataUrl), color.value);
   }
 
   return (

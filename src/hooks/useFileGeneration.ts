@@ -37,6 +37,7 @@ export interface UseFileGeneration {
   phase: GenerationPhase;
   progress: number;
   error: string | null;
+  browserRenderFailed: boolean;
   canRetryDelivery: boolean;
   clearError: () => void;
   generate: (
@@ -147,6 +148,7 @@ export function useFileGeneration(
   const [phase, setPhase] = useState<GenerationPhase>(null);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [browserRenderFailed, setBrowserRenderFailed] = useState(false);
   const [canRetryDelivery, setCanRetryDelivery] = useState(false);
   const runningRef = useRef(false);
   const pendingDeliveryRef = useRef<PendingDelivery | null>(null);
@@ -173,6 +175,7 @@ export function useFileGeneration(
 
   const clearError = useCallback(() => {
     setError(null);
+    setBrowserRenderFailed(false);
     setCanRetryDelivery(false);
   }, []);
 
@@ -332,12 +335,19 @@ export function useFileGeneration(
       runningRef.current = true;
       const operationId = ++operationRef.current;
       setError(null);
+      setBrowserRenderFailed(false);
       setCanRetryDelivery(false);
+      setGenerating(kind);
+      setPhase("rendering");
+      setProgress(0);
+      const canFallBack = kind === "mp4" && Boolean(tier && paymentCode);
+      let browserRenderComplete = false;
 
       try {
         const support = await checkRenderSupport();
         if (!isActiveOperation(operationId)) return;
         if (!support.supported) {
+          setBrowserRenderFailed(canFallBack);
           setError(
             t(
               "Video export needs a Chromium-based browser (Chrome, Edge, Brave) or recent Safari. The preview still works everywhere.",
@@ -346,9 +356,6 @@ export function useFileGeneration(
           return;
         }
 
-        setGenerating(kind);
-        setPhase("rendering");
-        setProgress(0);
         playSound("/task_Inprogress.mp3");
         trackEvent("download_button_initialize", {
           event_label: kind,
@@ -372,6 +379,7 @@ export function useFileGeneration(
               });
 
         if (!isActiveOperation(operationId)) return;
+        browserRenderComplete = true;
         const filename = ejectionFilename(props.ejectedText, kind);
         if (kind === "mp4") {
           if (!tier || !paymentCode) {
@@ -403,6 +411,7 @@ export function useFileGeneration(
         playSound("/task_Complete.mp3");
       } catch (generationError) {
         if (!isActiveOperation(operationId)) return;
+        setBrowserRenderFailed(canFallBack && !browserRenderComplete);
         if (generationError instanceof DeliveryError) {
           pendingDeliveryRef.current = null;
           setCanRetryDelivery(false);
@@ -513,6 +522,7 @@ export function useFileGeneration(
     phase,
     progress,
     error,
+    browserRenderFailed,
     canRetryDelivery,
     clearError,
     generate,

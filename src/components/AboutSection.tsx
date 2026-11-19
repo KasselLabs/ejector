@@ -19,7 +19,7 @@ export function AboutSection() {
     {
       question: t("Does this render on your servers?"),
       answer: t(
-        "No — Ejector renders everything in your browser, so nothing you type or upload is ever stored by us.",
+        "Ejector renders in your browser by default. If a paid video with a built-in color can't render there, you can choose to send the text and color to our server for rendering. Custom character files stay in your browser.",
       ),
     },
     {

@@ -15,11 +15,13 @@ export function ErrorDialog({
   message,
   onClose,
   actionLabel,
+  actionDescription,
   onAction,
 }: {
   message: string | null;
   onClose: () => void;
   actionLabel?: string;
+  actionDescription?: string;
   onAction?: () => void | Promise<void>;
 }) {
   const t = useT();
@@ -39,7 +41,10 @@ export function ErrorDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("Something went wrong. Please try again.")}</DialogTitle>
-          <DialogDescription>{message}</DialogDescription>
+          <DialogDescription>
+            {message}
+            {actionDescription && <span className="mt-2 block">{t(actionDescription)}</span>}
+          </DialogDescription>
         </DialogHeader>
         {actionLabel && onAction && (
           <DialogFooter>

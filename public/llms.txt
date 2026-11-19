@@ -2,8 +2,8 @@
 
 > Create an Among Us-style ejection animation with your own text and
 > character, then download it. The GIF is free; MP4 video is paid.
-> Everything renders in your browser — nothing you type or upload is
-> ever sent to a server.
+> Rendering starts in your browser. Paid videos with a stock color can use
+> an opt-in server render if browser rendering fails.
 
 Ejector is a free web tool by Kassel Labs that recreates the Among Us
 ejection scene: a crewmate tumbles across space while the ejection line
@@ -12,10 +12,9 @@ impostor-remain line ("1 Impostor remains"). Both lines are fully
 editable, and the ejected character can be one of the 12 standard
 crewmate colours or any image or animated GIF the user supplies.
 
-Unlike the other Kassel Labs intro creators, Ejector stores nothing:
-there is no account, no saved creation, and no shareable URL for a
-result. The animation is composed and encoded entirely on the user's
-device, and the finished file is downloaded directly from the browser.
+Ejector works without an account. Free GIFs are generated and downloaded
+in the browser. Paid MP4s also get an unguessable download URL
+for email delivery to the payment recipient.
 
 ## How the app works
 
@@ -50,10 +49,11 @@ WebCodecs API, and the GIF is encoded with gifenc from the rendered
 frames. The space background plays from a single H.264 clip through
 @remotion/media (mediabunny).
 
-There is no server-side renderer and no render queue — exports are
-produced locally and are typically ready in a few seconds. Because
-export depends on WebCodecs, downloads require a Chromium-based browser
-(Chrome, Edge, Brave) or a recent Safari; the preview works everywhere.
+Local export uses WebCodecs, available in Chromium-based browsers
+(Chrome, Edge, Brave) and recent Safari. For a paid MP4 with a stock
+crewmate color, the user may choose a server render if the local encode
+fails or the browser lacks support. That action sends the two text
+fields and the stock color to the render service.
 
 The interface is available in English and Brazilian Portuguese.
 
@@ -80,15 +80,12 @@ The interface is available in English and Brazilian Portuguese.
 
 - The home page (`/`) is the canonical entry point and the only URL in
   the sitemap. `/unsubscribe` is served with `noindex`.
-- Nothing a user creates is retrievable later: there are no permalinks
-  to generated GIFs or videos, and no gallery of past creations. Do not
-  describe Ejector as a place where results are hosted or shared.
-- Uploaded images and typed text never leave the browser. This is a
-  property of the architecture, not a policy promise — there is no
-  upload endpoint.
-- There is no public API. The only network calls are the payment iframe,
-  a paid-status check against api.payment.kassellabs.io, an image proxy
-  for user-supplied image URLs, and the newsletter mutation.
+- A ready paid video has a direct download link. Free GIFs are
+  downloaded from the browser.
+- Source images and GIFs stay in the browser during rendering. The
+  server fallback supports the two text fields and stock colors.
+- The app integrates with payment-backend for paid status, delivery
+  and server render jobs, and with the newsletter service.
 - This tool is unaffiliated with InnerSloth or any official Among Us
   rights holder. "Among Us" and related trademarks belong to their
   respective owners; Ejector is a fan-made tribute utility.

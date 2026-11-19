@@ -3,13 +3,29 @@
 ## Stack notes (divergences from global defaults)
 
 - **No Strapi backend, no monorepo, no Apollo.** Single Next.js 16 app.
-  The only backends touched are payment-backend (paid-check + charges via
-  the payment-frontend iframe) and admin.kassellabs.io GraphQL (newsletter).
-- **Rendering pipeline: 100% in-browser Remotion.** `@remotion/player`
-  preview, `@remotion/web-renderer` MP4 export, gifenc GIF export. There is no
-  server renderer and there must never be one. After rendering, the exact paid
-  MP4 output Blob is uploaded directly to persistent object storage for email
-  delivery; free GIF output is never uploaded.
+  The app uses payment-backend (paid status, checkout, delivery and render
+  jobs), the payment-frontend iframe, and admin.kassellabs.io GraphQL (newsletter).
+- **Rendering defaults to the browser.** `@remotion/player` previews the
+  animation, `@remotion/web-renderer` exports MP4, and gifenc exports GIF.
+  The browser uploads the exact paid MP4 Blob directly to object storage for
+  email delivery. Free GIFs and custom character source files stay local.
+- **Opt-in server render for paid stock-character MP4s.** A browser capability
+  or encode failure before delivery offers **Render on our server** with a
+  disclosure about the text and color being sent. The browser sends a job UUID,
+  paid tier, stock hex color from `CHARACTER_COLORS`, and the two text fields
+  (300 characters each) to payment-backend's
+  `POST /payment/ejector/:code/render-jobs`. Payment-backend validates the
+  purchase and queues the private renderer. Delivery failures in the browser
+  flow use **Retry delivery**.
+- **Server job recovery.** The browser persists only the job UUID under
+  `ejector-render-job:<payment code>`. A lost POST response retries the same
+  in-memory submission and UUID. Reloading checks the existing UUID by GET
+  without repeating the POST. Polling runs every two seconds for up to three
+  minutes, with a manual retry if the connection fails. A ready job exposes an
+  explicit download link and reports email status separately. Retrying a
+  confirmed failed render starts a fresh UUID. The `?testServerRender=1`
+  query exposes the same consent action directly for paid, eligible stock
+  selections.
 - **Payment is a soft gate.** A client UUID (`ejector-payment-code` in
   localStorage) keys payments; `GET /payment/ejector/:code/paid` on
   payment-backend restores the 24h unlimited-download window.
